@@ -1,0 +1,23 @@
+/* Bordes resplandecientes estilo UI UIX de monitoreo */
+.card-abierto {
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 25, 38, 1) 100%);
+}
+
+.card-cerrado {
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, rgba(15, 25, 38, 1) 100%);
+}
+
+/* Transición suave para desplegar la tarjeta de detalle */
+.detalle-desplegable {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease-in-out, opacity 0.25s ease-in-out;
+  opacity: 0;
+}
+
+.detalle-desplegable.abierto {
+  max-height: 600px;
+  opacity: 1;
+}

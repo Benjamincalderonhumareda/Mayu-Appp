@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoreo de Puentes - Huaycos</title>
+  <!-- CDN de Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#080d14] text-gray-100 font-sans min-h-screen flex justify-center items-start p-2 sm:p-6">
+
+  <!-- Contenedor Marco tipo Celular -->
+  <div class="w-full max-w-md bg-[#0f1926] border border-gray-800 rounded-3xl p-4 shadow-2xl space-y-4 my-2">
+    
+    <!-- Encabezado / Header -->
+    <header class="flex justify-between items-center pb-1">
+      <div>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 mb-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
+          MONITOREO MULTI-ESTACIÓN
+        </span>
+        <h1 class="text-xl font-extrabold tracking-tight text-white">Monitoreo de Puentes</h1>
+        <p class="text-xs text-gray-400">Cuenca Baja del Río Rímac</p>
+      </div>
+      <button onclick="abrirModal()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center space-x-1 shadow-lg transition-transform active:scale-95">
+        <span>➕</span>
+        <span>Nuevo</span>
+      </button>
+    </header>
+
+    <!-- Barra de Filtros -->
+    <div class="flex space-x-2 text-xs overflow-x-auto pb-1">
+      <button onclick="filtrarPuentes('todos')" id="btn-filtro-todos" class="px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded-lg font-bold">Todos</button>
+      <button onclick="filtrarPuentes('abierto')" id="btn-filtro-abierto" class="px-3 py-1 bg-[#172436] text-gray-400 rounded-lg font-semibold">Normal / Abierto</button>
+      <button onclick="filtrarPuentes('cerrado')" id="btn-filtro-cerrado" class="px-3 py-1 bg-[#172436] text-gray-400 rounded-lg font-semibold">Alerta / Cerrado</button>
+    </div>
+
+    <!-- Contenedor Principal donde se dibujan los puentes -->
+    <main id="puentes-container" class="space-y-4">
+      <!-- Se genera dinámicamente desde app.js -->
+    </main>
+
+    <!-- Navegación Inferior (Tabbar) -->
+    <nav class="flex justify-around items-center pt-3 border-t border-gray-800 text-xs text-gray-400">
+      <button class="flex flex-col items-center text-emerald-400 font-semibold">
+        <span>📱</span>
+        <span>Widgets</span>
+      </button>
+      <button class="flex flex-col items-center hover:text-gray-200">
+        <span>🗺️</span>
+        <span>Mapa</span>
+      </button>
+      <button class="flex flex-col items-center hover:text-gray-200">
+        <span>⚠️</span>
+        <span>Alertas</span>
+      </button>
+      <button class="flex flex-col items-center hover:text-gray-200">
+        <span>📊</span>
+        <span>Reportes</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- MODAL / FORMULARIO INTERACTIVO PARA AGREGAR REGISTROS MANUALES -->
+  <div id="modal-agregar" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-[#111c2a] border border-gray-700 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+        <h3 class="text-base font-extrabold text-white">Registrar Lectura / Puente</h3>
+        <button onclick="cerrarModal()" class="text-gray-400 hover:text-white font-bold text-lg">&times;</button>
+      </div>
+
+      <form id="form-nuevo-puente" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-300 font-bold mb-1">Nombre del Puente</label>
+          <input type="text" id="input-nombre" placeholder="Ej. Puente Huachipa" required class="w-full bg-[#182638] border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-gray-300 font-bold mb-1">Nivel de Agua (cm)</label>
+            <input type="number" step="0.1" id="input-caudal" placeholder="Ej. 750" required class="w-full bg-[#182638] border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-gray-300 font-bold mb-1">Altura Estructura (m)</label>
+            <input type="number" step="0.1" id="input-altura" value="18.50" required class="w-full bg-[#182638] border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-gray-300 font-bold mb-1">Estado de la Vía</label>
+          <select id="select-estado" class="w-full bg-[#182638] border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+            <option value="Abierto">Abierto (Flujo Normal)</option>
+            <option value="Precaución">Precaución (Oscilación)</option>
+            <option value="Cerrado">Cerrado (Desborde Inminente)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-300 font-bold mb-1">URL / Ruta de Imagen</label>
+          <input type="text" id="input-imagen" value="./img/puente-carapongo.png" class="w-full bg-[#182638] border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="flex space-x-2 pt-2">
+          <button type="button" onclick="cerrarModal()" class="w-1/2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 rounded-xl">Cancelar</button>
+          <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl shadow-lg">Guardar Registro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
