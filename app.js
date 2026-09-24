@@ -1,68 +1,171 @@
-// Arreglo de puentes iniciales (Datos simulados cargados dinámicamente)
-const puentesIniciales = [
-  {
-    id: "carapongo",
-    nombre: "Puente Carapongo",
-    km: "KM 14.8 C.C.",
-    alturaMetros: 18.50,
-    imagen: "./img/puente-carapongo.png",
-    historial: [
-      { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 750 },
-      { fecha: "2026-09-09 13:10:00", estado: "Abierto", nivelCaudalCm: 720 },
-      { fecha: "2026-09-09 10:00:00", estado: "Abierto", nivelCaudalCm: 690 }
-    ]
-  },
-  {
-    id: "huachipa",
-    nombre: "Puente Huachipa",
-    km: "KM 9.2 C.C.",
-    alturaMetros: 16.00,
-    imagen: "https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=600&q=80",
-    historial: [
-      { fecha: "2026-09-09 15:25:00", estado: "Precaución", nivelCaudalCm: 1250 },
-      { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 1100 }
-    ]
-  },
-  {
-    id: "losangeles",
-    nombre: "Puente Los Ángeles",
-    km: "KM 18.1 C.C.",
-    alturaMetros: 15.50,
-    imagen: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80",
-    historial: [
-      { fecha: "2026-09-09 15:00:00", estado: "Cerrado", nivelCaudalCm: 1550 },
-      { fecha: "2026-09-09 14:00:00", estado: "Precaución", nivelCaudalCm: 1400 }
-    ]
-  }
-];
+// ============================================================================
+// CONFIGURACIÓN DE LA API (Render + Neon)
+// La base de datos es la ÚNICA fuente de verdad: la app solo la refleja.
+// ============================================================================
+const API_URL = "https://prueba-de-ti-2.onrender.com";
+const INTERVALO_MS = 10000; // refresca cada 10 segundos
+const MAX_HISTORIAL_POR_PUENTE = 15;
+
+// Datos que NO vienen del sensor (km, imagen, altura por defecto), por puente.
+// Un puente solo aparece en la app si tiene lecturas en la base de datos.
+const METAS_INICIALES = {
+  carapongo:  { km: "KM 14.8 C.C.", alturaMetros: 18.50, imagen: "./img/puente-carapongo.png" },
+  huachipa:   { km: "KM 9.2 C.C.",  alturaMetros: 16.00, imagen: "https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=600&q=80" },
+  losangeles: { km: "KM 18.1 C.C.", alturaMetros: 15.50, imagen: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80" }
+};
+const META_POR_DEFECTO = { km: "KM Registrado", alturaMetros: 15.00, imagen: "./img/puente-carapongo.png" };
 
 // Estado global de la app
 let listaPuentes = [];
 let desplegadosMap = {}; // Guarda qué tarjetas están abiertas
 let filtroActual = "todos";
+let sincronizando = false;   // evita peticiones encimadas (Render puede tardar al despertar)
+let primeraCargaOk = false;
 
 document.addEventListener("DOMContentLoaded", () => {
-  cargarPuentesGuardados();
-  renderizarTodosLosPuentes();
+  localStorage.removeItem("mayu_puentes_data"); // caché antigua con datos simulados
+
+  mostrarMensajeContenedor("Conectando con el servidor…");
 
   // Escuchar envío del formulario manual
   document.getElementById("form-nuevo-puente").addEventListener("submit", agregarRegistroManual);
+
+  // Conectar con la API y refrescar periódicamente
+  actualizarDesdeAPI();
+  setInterval(actualizarDesdeAPI, INTERVALO_MS);
 });
 
-// Cargar desde localStorage o inicializar por defecto
-function cargarPuentesGuardados() {
-  const localData = localStorage.getItem("mayu_puentes_data");
-  if (localData) {
-    listaPuentes = JSON.parse(localData);
+function mostrarMensajeContenedor(texto) {
+  document.getElementById("puentes-container").innerHTML =
+    `<p class="text-center text-gray-500 text-xs py-8">${texto}</p>`;
+}
+
+// ============================================================================
+// INTEGRACIÓN CON LA API
+// ============================================================================
+
+// "Puente Los Ángeles" -> "losangeles" | "Puente Carapongo" -> "carapongo"
+function idDesdeNombre(nombre) {
+  return nombre
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita tildes
+    .toLowerCase()
+    .replace(/^puente\s+/, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+// Convierte lo que llegue (ESP32, Neon o curl) a los 3 estados que entiende la app.
+// Si no reconoce el texto, muestra "Precaución" (más seguro que decir "Abierto").
+function normalizarEstado(texto = "") {
+  const t = String(texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (t.includes("cerrad") || t.includes("peligro") || t.includes("critic")) return "Cerrado";
+  if (t.includes("abiert") || t.includes("normal") || t.includes("seguro")) return "Abierto";
+  return "Precaución";
+}
+
+// Devuelve "YYYY-MM-DD HH:mm:ss" en hora de Lima.
+// Si el servidor manda la fecha sin zona horaria, se asume UTC (lo normal en Render/Neon).
+function formatearFecha(valor) {
+  if (!valor) return "—";
+  let iso = String(valor);
+  if (/^\d{4}-\d{2}-\d{2} \d/.test(iso)) iso = iso.replace(" ", "T");
+  iso = iso.replace(/(\.\d{3})\d+/, "$1"); // recorta microsegundos
+  const tieneZona = /(Z|GMT|UTC|[+-]\d{2}:?\d{2})$/.test(iso);
+  const fecha = new Date(tieneZona ? iso : iso + "Z");
+  if (isNaN(fecha)) return String(valor);
+  return fecha.toLocaleString("sv-SE", { timeZone: "America/Lima" });
+}
+
+// Trae el historial de Neon y RECONSTRUYE la lista de puentes desde cero.
+// Si algo se borra en la base de datos, desaparece de la app en el siguiente refresco.
+async function sincronizarConAPI() {
+  const res = await fetch(`${API_URL}/alertas/historial?limit=200`);
+  if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+  const lecturas = await res.json(); // vienen de la más nueva a la más antigua
+
+  const grupos = {};
+  lecturas.forEach(l => {
+    const nombre = l.nombre_puente || "Puente Carapongo";
+    const id = idDesdeNombre(nombre);
+    if (!grupos[id]) grupos[id] = { nombre, historial: [], altura: null };
+    // Si la lectura trae la altura del puente (columna opcional), se usa la más reciente
+    if (grupos[id].altura === null && l.altura_puente_m) grupos[id].altura = Number(l.altura_puente_m);
+    grupos[id].historial.push({
+      fecha: formatearFecha(l.fecha_registro),
+      estado: normalizarEstado(l.estado_puente),
+      nivelCaudalCm: Number(l.nivel_caudal)
+    });
+  });
+
+  const metaLocal = cargarMeta();
+  const nuevaLista = Object.entries(grupos).map(([id, g]) => {
+    const meta = { ...META_POR_DEFECTO, ...(METAS_INICIALES[id] || {}), ...(metaLocal[id] || {}) };
+    return {
+      id,
+      nombre: g.nombre,
+      km: meta.km,
+      alturaMetros: g.altura ?? meta.alturaMetros,
+      imagen: meta.imagen,
+      historial: g.historial.slice(0, MAX_HISTORIAL_POR_PUENTE)
+    };
+  });
+  nuevaLista.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  listaPuentes = nuevaLista; // reemplazo total: la app queda igual que Neon
+  guardarEnLocalStorage();
+}
+
+async function actualizarDesdeAPI() {
+  if (sincronizando) return;
+  sincronizando = true;
+  try {
+    await sincronizarConAPI();
+    primeraCargaOk = true;
+    mostrarConexion(true);
+    renderizarTodosLosPuentes();
+  } catch (err) {
+    console.error("No se pudo conectar con la API:", err);
+    mostrarConexion(false);
+    // Si nunca se logró conectar, avisar; si ya había datos, se dejan los últimos conocidos
+    if (!primeraCargaOk) mostrarMensajeContenedor("No se pudo conectar con el servidor. Reintentando…");
+  } finally {
+    sincronizando = false;
+  }
+}
+
+function mostrarConexion(ok) {
+  const el = document.getElementById("estado-conexion");
+  if (!el) return;
+  if (ok) {
+    el.textContent = "🟢 En línea · " + new Date().toLocaleTimeString("es-PE");
+    el.className = "text-[10px] text-emerald-400 mt-0.5";
   } else {
-    listaPuentes = puentesIniciales;
-    guardarEnLocalStorage();
+    el.textContent = "🔴 Sin conexión con el servidor (reintentando…)";
+    el.className = "text-[10px] text-red-400 mt-0.5";
+  }
+}
+
+// ============================================================================
+// DATOS LOCALES: solo lo que la base de datos no guarda (km, imagen, altura)
+// ============================================================================
+function cargarMeta() {
+  try {
+    return JSON.parse(localStorage.getItem("mayu_meta") || "{}");
+  } catch {
+    return {};
   }
 }
 
 function guardarEnLocalStorage() {
-  localStorage.setItem("mayu_puentes_data", JSON.stringify(listaPuentes));
+  const meta = {};
+  listaPuentes.forEach(p => {
+    meta[p.id] = { km: p.km, alturaMetros: p.alturaMetros, imagen: p.imagen };
+  });
+  localStorage.setItem("mayu_meta", JSON.stringify(meta));
 }
+
+// ============================================================================
+// RENDER
+// ============================================================================
 
 // Renderiza todas las tarjetas según el filtro seleccionado
 function renderizarTodosLosPuentes() {
@@ -76,6 +179,11 @@ function renderizarTodosLosPuentes() {
     if (filtroActual === "cerrado") return ultimoEstado.includes("cerrad") || ultimoEstado.includes("precau");
     return true;
   });
+
+  if (listaPuentes.length === 0) {
+    container.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">No hay puentes registrados todavía en la base de datos.</p>`;
+    return;
+  }
 
   if (filtrados.length === 0) {
     container.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">No se encontraron puentes en esta categoría.</p>`;
@@ -230,8 +338,10 @@ function cerrarModal() {
   document.getElementById("modal-agregar").classList.add("hidden");
 }
 
-// Agregar o actualizar un puente con nuevo registro manual
-function agregarRegistroManual(e) {
+// ============================================================================
+// REGISTRO MANUAL → ahora se guarda en Neon a través de la API
+// ============================================================================
+async function agregarRegistroManual(e) {
   e.preventDefault();
 
   const nombre = document.getElementById("input-nombre").value.trim();
@@ -240,34 +350,39 @@ function agregarRegistroManual(e) {
   const estado = document.getElementById("select-estado").value;
   const imagen = document.getElementById("input-imagen").value || "./img/puente-carapongo.png";
 
-  const idGenerado = nombre.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  const boton = e.submitter;
+  if (boton) { boton.disabled = true; boton.textContent = "Guardando..."; }
 
-  const nuevoRegistro = { fecha: ahora, estado: estado, nivelCaudalCm: nivelCm };
-
-  // Buscar si ya existe el puente
-  const index = listaPuentes.findIndex(p => p.id === idGenerado);
-
-  if (index !== -1) {
-    // Si el puente existe, agregamos la lectura al inicio de su historial
-    listaPuentes[index].historial.unshift(nuevoRegistro);
-    listaPuentes[index].alturaMetros = alturaM;
-  } else {
-    // Si no existe, lo creamos nuevo
-    listaPuentes.unshift({
-      id: idGenerado,
-      nombre: nombre,
-      km: "KM Registrado",
-      alturaMetros: alturaM,
-      imagen: imagen,
-      historial: [nuevoRegistro]
+  try {
+    const res = await fetch(`${API_URL}/alertas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre_puente: nombre,
+        nivel_caudal: nivelCm,   // en centímetros
+        estado_puente: estado
+      })
     });
-  }
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
 
-  guardarEnLocalStorage();
-  cerrarModal();
-  renderizarTodosLosPuentes();
-  document.getElementById("form-nuevo-puente").reset();
+    // Traer lo último desde Neon y luego aplicar los datos que solo viven en la app
+    await sincronizarConAPI();
+    const puente = listaPuentes.find(p => p.id === idDesdeNombre(nombre));
+    if (puente) {
+      puente.alturaMetros = alturaM;
+      puente.imagen = imagen;
+      guardarEnLocalStorage();
+    }
+
+    cerrarModal();
+    renderizarTodosLosPuentes();
+    document.getElementById("form-nuevo-puente").reset();
+  } catch (err) {
+    console.error(err);
+    alert("No se pudo guardar en el servidor. Si hace rato no lo usas, Render puede estar despertando: espera unos segundos y vuelve a intentar.");
+  } finally {
+    if (boton) { boton.disabled = false; boton.textContent = "Guardar Registro"; }
+  }
 }
 
 // Filtros superiores
