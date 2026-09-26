@@ -1,403 +1,146 @@
-// ============================================================================
-// CONFIGURACIÓN DE LA API (Render + Neon)
-// La base de datos es la ÚNICA fuente de verdad: la app solo la refleja.
-// ============================================================================
-const API_URL = "https://prueba-de-ti-2.onrender.com";
-const INTERVALO_MS = 10000; // refresca cada 10 segundos
-const MAX_HISTORIAL_POR_PUENTE = 15;
+// Datos de muestra con la estructura que ya usa la app: puente + historial.
+// Sustituye esta lista por la respuesta de tu API cuando conectes el endpoint.
+// imagen: pega aquí la ruta de la foto/cámara de cada puente.
+// mapaUrl: pega aquí el enlace manual a Google Maps (o al mapa que uses).
+const puentesIniciales = [
+  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", alturaMetros: 18.5, imagen: "./Img/puente-carapongo.png", mapaUrl: "", historial: [
+    { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 143 },
+    { fecha: "2026-09-09 13:10:00", estado: "Abierto", nivelCaudalCm: 139 },
+    { fecha: "2026-09-09 10:00:00", estado: "Abierto", nivelCaudalCm: 121 }
+  ] },
+  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", alturaMetros: 15.5, imagen: "", mapaUrl: "", historial: [
+    { fecha: "2026-09-09 15:25:00", estado: "Alerta", nivelCaudalCm: 1054 },
+    { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 920 }
+  ] },
+  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", alturaMetros: 15, imagen: "", mapaUrl: "", historial: [
+    { fecha: "2026-09-09 18:30:00", estado: "Cerrado", nivelCaudalCm: 1498 },
+    { fecha: "2026-09-09 17:15:00", estado: "Alerta", nivelCaudalCm: 1453 },
+    { fecha: "2026-09-09 14:00:00", estado: "Abierto", nivelCaudalCm: 1210 },
+    { fecha: "2026-09-09 08:30:00", estado: "Abierto", nivelCaudalCm: 1085 }
+  ] }
+];
 
-// Datos que NO vienen del sensor (km, imagen, altura por defecto), por puente.
-// Un puente solo aparece en la app si tiene lecturas en la base de datos.
-const METAS_INICIALES = {
-  carapongo:  { km: "KM 14.8 C.C.", alturaMetros: 18.50, imagen: "./img/puente-carapongo.png" },
-  huachipa:   { km: "KM 9.2 C.C.",  alturaMetros: 16.00, imagen: "https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=600&q=80" },
-  losangeles: { km: "KM 18.1 C.C.", alturaMetros: 15.50, imagen: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80" }
+const STORAGE_KEYS = { bridges: "mayu_puentes_data_v2", assigned: "mayu_puentes_asignados_v2", alerts: "mayu_pref_alertas" };
+// Perfil de muestra basado en la maqueta. Reemplazar con la sesión/API al integrarla.
+const perfilUsuario = {
+  nombre: "Ing. Benjamín Calderón",
+  correo: "b.calderon@indeci-mayu.gob.pe",
+  emergencia: "+51 984 210 493",
+  municipalidad: "Municipalidad de Chaclacayo",
+  telefonoMunicipal: "(01) 358-2235",
+  whatsappMunicipal: "+51 984 210 493"
 };
-const META_POR_DEFECTO = { km: "KM Registrado", alturaMetros: 15.00, imagen: "./img/puente-carapongo.png" };
-
-// Estado global de la app
 let listaPuentes = [];
-let desplegadosMap = {}; // Guarda qué tarjetas están abiertas
-let filtroActual = "todos";
-let sincronizando = false;   // evita peticiones encimadas (Render puede tardar al despertar)
-let primeraCargaOk = false;
+let filtroWidget = "Todos";
+let filtroMapa = "Todos";
+let consultaWidget = "";
+let consultaMapa = "";
+let asignados = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-  localStorage.removeItem("mayu_puentes_data"); // caché antigua con datos simulados
-
-  mostrarMensajeContenedor("Conectando con el servidor…");
-
-  // Escuchar envío del formulario manual
-  document.getElementById("form-nuevo-puente").addEventListener("submit", agregarRegistroManual);
-
-  // Conectar con la API y refrescar periódicamente
-  actualizarDesdeAPI();
-  setInterval(actualizarDesdeAPI, INTERVALO_MS);
+  listaPuentes = leerJSON(STORAGE_KEYS.bridges, puentesIniciales);
+  const puentePrincipal = listaPuentes.find(p => p.id === "chaclacayo") || listaPuentes[0];
+  asignados = leerJSON(STORAGE_KEYS.assigned, puentePrincipal ? [puentePrincipal.id] : []);
+  document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => cambiarPagina(btn.dataset.page)));
+  document.getElementById("search-widgets").addEventListener("input", e => { consultaWidget = e.target.value.trim().toLocaleLowerCase("es"); renderWidgets(); });
+  document.getElementById("search-maps").addEventListener("input", e => { consultaMapa = e.target.value.trim().toLocaleLowerCase("es"); renderMapa(); });
+  const pref = document.getElementById("pref-alerts");
+  pref.checked = localStorage.getItem(STORAGE_KEYS.alerts) !== "false";
+  pref.addEventListener("change", () => localStorage.setItem(STORAGE_KEYS.alerts, pref.checked));
+  renderizar();
 });
 
-function mostrarMensajeContenedor(texto) {
-  document.getElementById("puentes-container").innerHTML =
-    `<p class="text-center text-gray-500 text-xs py-8">${texto}</p>`;
+function leerJSON(clave, fallback) {
+  try { const valor = localStorage.getItem(clave); return valor ? JSON.parse(valor) : fallback; }
+  catch { return fallback; }
 }
-
-// ============================================================================
-// INTEGRACIÓN CON LA API
-// ============================================================================
-
-// "Puente Los Ángeles" -> "losangeles" | "Puente Carapongo" -> "carapongo"
-function idDesdeNombre(nombre) {
-  return nombre
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita tildes
-    .toLowerCase()
-    .replace(/^puente\s+/, "")
-    .replace(/[^a-z0-9]/g, "");
+function guardar(clave, valor) { localStorage.setItem(clave, JSON.stringify(valor)); }
+function actual(p) { return (p.historial || [])[0] || { estado: "Sin datos", nivelCaudalCm: 0, fecha: "" }; }
+function estadoClase(estado) {
+  const s = (estado || "").toLocaleLowerCase("es");
+  if (s.includes("cerr")) return "closed";
+  if (s.includes("alert") || s.includes("precau")) return "warning";
+  return "open";
 }
-
-// Convierte lo que llegue (ESP32, Neon o curl) a los 3 estados que entiende la app.
-// Si no reconoce el texto, muestra "Precaución" (más seguro que decir "Abierto").
-function normalizarEstado(texto = "") {
-  const t = String(texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (t.includes("cerrad") || t.includes("peligro") || t.includes("critic")) return "Cerrado";
-  if (t.includes("abiert") || t.includes("normal") || t.includes("seguro")) return "Abierto";
-  return "Precaución";
+function estadoLabel(estado) { const c = estadoClase(estado); return c === "closed" ? "Cerrado" : c === "warning" ? "Alerta" : estado === "Sin datos" ? estado : "Abierto"; }
+function porcentaje(p) { return p.alturaMetros > 0 ? Math.min(Math.round(actual(p).nivelCaudalCm / (p.alturaMetros * 100) * 100), 100) : 0; }
+function escapar(valor) { return String(valor ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
+function renderizar() { renderWidgets(); renderMapa(); renderUsuario(); }
+function cambiarPagina(id) {
+  document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.id === `page-${id}`));
+  const navPage = id === "detalle" ? "widgets" : id;
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.toggle("active", el.dataset.page === navPage));
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
-
-// Devuelve "YYYY-MM-DD HH:mm:ss" en hora de Lima.
-// Si el servidor manda la fecha sin zona horaria, se asume UTC (lo normal en Render/Neon).
-function formatearFecha(valor) {
-  if (!valor) return "—";
-  let iso = String(valor);
-  if (/^\d{4}-\d{2}-\d{2} \d/.test(iso)) iso = iso.replace(" ", "T");
-  iso = iso.replace(/(\.\d{3})\d+/, "$1"); // recorta microsegundos
-  const tieneZona = /(Z|GMT|UTC|[+-]\d{2}:?\d{2})$/.test(iso);
-  const fecha = new Date(tieneZona ? iso : iso + "Z");
-  if (isNaN(fecha)) return String(valor);
-  return fecha.toLocaleString("sv-SE", { timeZone: "America/Lima" });
+function conteosEstado() {
+  return listaPuentes.reduce((acc, p) => { acc[estadoClase(actual(p).estado)]++; return acc; }, { open: 0, warning: 0, closed: 0 });
 }
-
-// Trae el historial de Neon y RECONSTRUYE la lista de puentes desde cero.
-// Si algo se borra en la base de datos, desaparece de la app en el siguiente refresco.
-async function sincronizarConAPI() {
-  const res = await fetch(`${API_URL}/alertas/historial?limit=200`);
-  if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-  const lecturas = await res.json(); // vienen de la más nueva a la más antigua
-
-  const grupos = {};
-  lecturas.forEach(l => {
-    const nombre = l.nombre_puente || "Puente Carapongo";
-    const id = idDesdeNombre(nombre);
-    if (!grupos[id]) grupos[id] = { nombre, historial: [], altura: null };
-    // Si la lectura trae la altura del puente (columna opcional), se usa la más reciente
-    if (grupos[id].altura === null && l.altura_puente_m) grupos[id].altura = Number(l.altura_puente_m);
-    grupos[id].historial.push({
-      fecha: formatearFecha(l.fecha_registro),
-      estado: normalizarEstado(l.estado_puente),
-      nivelCaudalCm: Number(l.nivel_caudal)
-    });
-  });
-
-  const metaLocal = cargarMeta();
-  const nuevaLista = Object.entries(grupos).map(([id, g]) => {
-    const meta = { ...META_POR_DEFECTO, ...(METAS_INICIALES[id] || {}), ...(metaLocal[id] || {}) };
-    return {
-      id,
-      nombre: g.nombre,
-      km: meta.km,
-      alturaMetros: g.altura ?? meta.alturaMetros,
-      imagen: meta.imagen,
-      historial: g.historial.slice(0, MAX_HISTORIAL_POR_PUENTE)
-    };
-  });
-  nuevaLista.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-  listaPuentes = nuevaLista; // reemplazo total: la app queda igual que Neon
-  guardarEnLocalStorage();
+function construirFiltros(targetId, selected, handler) {
+  const counts = conteosEstado();
+  const opciones = [["Todos", listaPuentes.length], ["Cerrado", counts.closed], ["Alerta", counts.warning], ["Abierto", counts.open]];
+  document.getElementById(targetId).innerHTML = opciones.map(([label, count]) => `<button class="filter-chip ${selected === label ? "selected" : ""}" data-filter="${label}"><span class="dot ${label === "Todos" ? "all" : estadoClase(label)}"></span>${label}<b>${count}</b></button>`).join("");
+  document.getElementById(targetId).querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => handler(btn.dataset.filter)));
 }
-
-async function actualizarDesdeAPI() {
-  if (sincronizando) return;
-  sincronizando = true;
-  try {
-    await sincronizarConAPI();
-    primeraCargaOk = true;
-    mostrarConexion(true);
-    renderizarTodosLosPuentes();
-  } catch (err) {
-    console.error("No se pudo conectar con la API:", err);
-    mostrarConexion(false);
-    // Si nunca se logró conectar, avisar; si ya había datos, se dejan los últimos conocidos
-    if (!primeraCargaOk) mostrarMensajeContenedor("No se pudo conectar con el servidor. Reintentando…");
-  } finally {
-    sincronizando = false;
-  }
+function renderWidgets() {
+  const counts = conteosEstado();
+  document.getElementById("status-summary").innerHTML = `<span class="summary-all">${listaPuentes.length} <small>Puentes</small></span><span class="summary-open"><i></i>${counts.open} Abierto${counts.open === 1 ? "" : "s"}</span><span class="summary-warning"><i></i>${counts.warning} Alerta${counts.warning === 1 ? "" : "s"}</span><span class="summary-closed"><i></i>${counts.closed} Cerrado${counts.closed === 1 ? "" : "s"}</span>`;
+  construirFiltros("widget-filters", filtroWidget, v => { filtroWidget = v; renderWidgets(); });
+  const items = listaPuentes.filter(p => coincide(p, consultaWidget) && coincideFiltro(p, filtroWidget));
+  document.getElementById("puentes-container").innerHTML = items.length ? items.map(tarjetaWidget).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
 }
-
-function mostrarConexion(ok) {
-  const el = document.getElementById("estado-conexion");
-  if (!el) return;
-  if (ok) {
-    el.textContent = "🟢 En línea · " + new Date().toLocaleTimeString("es-PE");
-    el.className = "text-[10px] text-emerald-400 mt-0.5";
-  } else {
-    el.textContent = "🔴 Sin conexión con el servidor (reintentando…)";
-    el.className = "text-[10px] text-red-400 mt-0.5";
-  }
+function coincide(p, q) { return !q || `${p.nombre} ${p.km}`.toLocaleLowerCase("es").includes(q); }
+function coincideFiltro(p, filtro) { return filtro === "Todos" || estadoLabel(actual(p).estado) === filtro; }
+function vacio(mensaje) { return `<div class="empty-state"><span>⌕</span><p>${mensaje}</p></div>`; }
+function tarjetaWidget(p) {
+  const r = actual(p), c = estadoClase(r.estado), pct = porcentaje(p);
+  const agua = (r.nivelCaudalCm / 100).toFixed(2);
+  return `<article class="bridge-card ${c}" role="button" tabindex="0" aria-label="Ver detalles de ${escapar(p.nombre)}" onclick="abrirDetalle('${escapar(p.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirDetalle('${escapar(p.id)}')}">
+    <div class="bridge-top"><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span><span class="distance">KM ${escapar(p.km)}</span></div>
+    <div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="bridge-id">${escapar(p.id.toUpperCase())}</span></div>
+    <div class="metrics"><div class="metric"><span>ALTURA AGUA</span><b>${agua}<small> m</small></b></div><div class="metric"><span>ALTURA PUENTE</span><b>${Number(p.alturaMetros).toFixed(2)}<small> m</small></b></div></div>
+    <div class="capacity"><div class="capacity-label"><span>Capacidad</span><b>${pct}%</b></div><div class="capacity-track"><i style="width:${pct}%"></i></div></div>
+    <div class="details-prompt"><span>⌁ &nbsp;Ver detalles</span><span>→</span></div>
+  </article>`;
 }
-
-// ============================================================================
-// DATOS LOCALES: solo lo que la base de datos no guarda (km, imagen, altura)
-// ============================================================================
-function cargarMeta() {
-  try {
-    return JSON.parse(localStorage.getItem("mayu_meta") || "{}");
-  } catch {
-    return {};
-  }
+function contenidoDetalle(p) {
+  const history = (p.historial || []).slice(0, 8), max = Math.max(Number(p.alturaMetros) * 100, ...history.map(x => Number(x.nivelCaudalCm) || 0), 1);
+  const points = history.slice().reverse().map((x, i, arr) => `${arr.length < 2 ? 8 : 8 + i * (84 / (arr.length - 1))},${44 - (Number(x.nivelCaudalCm) || 0) / max * 35}`).join(" ");
+  return `<div class="chart-card"><div class="detail-heading"><span class="chart-icon">⌁</span><div><b>Evolución del nivel</b><small>Registros disponibles</small></div></div><svg class="history-chart" viewBox="0 0 100 50" preserveAspectRatio="none" role="img" aria-label="Gráfico de nivel de agua"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="${points.split(" ").at(-1)?.split(",")[0] || 8}" cy="${points.split(" ").at(-1)?.split(",")[1] || 40}" r="1.8" fill="currentColor"/></svg><div class="chart-labels"><span>${history.length ? escapar(history.at(-1).fecha?.slice(11,16) || "") : ""}</span><b>${history.length ? `${(Number(actual(p).nivelCaudalCm) / 100).toFixed(2)} m actuales` : "Sin lecturas"}</b><span>${history.length ? escapar(actual(p).fecha?.slice(11,16) || "") : ""}</span></div></div>
+    <div class="history-card"><div class="detail-heading"><span class="history-icon">◷</span><div><b>Historial de estados</b><small>${history.length} registros</small></div></div>${history.length ? `<div class="history-list">${history.map(x => `<div class="history-item ${estadoClase(x.estado)}"><i></i><div><div class="history-line"><b>${escapar(x.fecha || "")}</b><span class="status-tag"><i></i>${escapar(estadoLabel(x.estado))}</span><strong>${(Number(x.nivelCaudalCm) / 100).toFixed(2)} m</strong></div></div></div>`).join("")}</div>` : `<p class="muted">Aún no hay historial.</p>`}</div>`;
 }
-
-function guardarEnLocalStorage() {
-  const meta = {};
-  listaPuentes.forEach(p => {
-    meta[p.id] = { km: p.km, alturaMetros: p.alturaMetros, imagen: p.imagen };
-  });
-  localStorage.setItem("mayu_meta", JSON.stringify(meta));
+function abrirDetalle(id) {
+  const puente = listaPuentes.find(p => p.id === id);
+  if (!puente) return;
+  const r = actual(puente), c = estadoClase(r.estado), nivelM = (Number(r.nivelCaudalCm) / 100).toFixed(2);
+  document.getElementById("detalle-puente").innerHTML = `<button class="back-button" onclick="volverAWidgets()"><span>←</span> Volver a Widgets</button>
+    <div class="detail-titlebar"><h1 id="detail-title">Detalles del Puente</h1><span class="status-tag ${c}"><i></i>${escapar(estadoLabel(r.estado))}</span></div>
+    <div class="detail-hero ${puente.imagen ? "with-image" : ""}" ${puente.imagen ? `style="--bridge-image:url('${escapar(puente.imagen)}')"` : ""}><div class="detail-hero-shade"></div><div><span class="distance">KM ${escapar(puente.km)}</span><h2>${escapar(puente.nombre)}</h2></div></div>
+    <div class="detail-current"><div><span>ALTURA DE AGUA</span><b>${nivelM}<small> m</small></b></div><div><span>ALTURA DEL PUENTE</span><b>${Number(puente.alturaMetros).toFixed(2)}<small> m</small></b></div><div><span>CAPACIDAD ACTUAL</span><b>${porcentaje(puente)}<small>%</small></b></div></div>
+    ${contenidoDetalle(puente)}`;
+  cambiarPagina("detalle");
 }
-
-// ============================================================================
-// RENDER
-// ============================================================================
-
-// Renderiza todas las tarjetas según el filtro seleccionado
-function renderizarTodosLosPuentes() {
-  const container = document.getElementById("puentes-container");
-  container.innerHTML = "";
-
-  const filtrados = listaPuentes.filter(p => {
-    if (filtroActual === "todos") return true;
-    const ultimoEstado = p.historial[0].estado.toLowerCase();
-    if (filtroActual === "abierto") return ultimoEstado.includes("abiert");
-    if (filtroActual === "cerrado") return ultimoEstado.includes("cerrad") || ultimoEstado.includes("precau");
-    return true;
-  });
-
-  if (listaPuentes.length === 0) {
-    container.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">No hay puentes registrados todavía en la base de datos.</p>`;
-    return;
-  }
-
-  if (filtrados.length === 0) {
-    container.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">No se encontraron puentes en esta categoría.</p>`;
-    return;
-  }
-
-  filtrados.forEach(puente => {
-    const cardHTML = crearTarjetaPuenteHTML(puente);
-    container.innerHTML += cardHTML;
-  });
+function volverAWidgets() { cambiarPagina("widgets"); }
+function renderMapa() {
+  construirFiltros("map-filters", filtroMapa, v => { filtroMapa = v; renderMapa(); });
+  const items = listaPuentes.filter(p => coincide(p, consultaMapa) && coincideFiltro(p, filtroMapa));
+  document.getElementById("map-container").innerHTML = items.length ? items.map(tarjetaMapa).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
+  document.getElementById("map-count").textContent = `${items.length} ${items.length === 1 ? "estación" : "estaciones"}`;
 }
-
-// Genera la tarjeta HTML para un puente específico
-function crearTarjetaPuenteHTML(puente) {
-  const actual = puente.historial[0];
-  const nivelMetros = (actual.nivelCaudalCm / 100).toFixed(2);
-  const estaCerrado = actual.estado.toLowerCase().includes("cerrad");
-  const estaPrecaucion = actual.estado.toLowerCase().includes("precau");
-
-  // Porcentaje del cauce
-  const porcentaje = Math.min(Math.round((nivelMetros / puente.alturaMetros) * 100), 100);
-
-  // Estilos según el nivel de riesgo
-  let claseCard = "card-abierto";
-  let badgeText = "● ALERTA MÍNIMA";
-  let badgeColor = "bg-emerald-950/80 text-emerald-400 border-emerald-800";
-  let bgTag = "bg-emerald-600 text-white";
-  let barColor = "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]";
-
-  if (estaCerrado) {
-    claseCard = "card-cerrado";
-    badgeText = "● ALERTA MÁXIMA";
-    badgeColor = "bg-red-950/80 text-red-400 border-red-800";
-    bgTag = "bg-red-600 text-white";
-    barColor = "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
-  } else if (estaPrecaucion) {
-    claseCard = "border border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-[#0f1926]";
-    badgeText = "● ALERTA RIESGO";
-    badgeColor = "bg-amber-950/80 text-amber-400 border-amber-800";
-    bgTag = "bg-amber-600 text-white";
-    barColor = "bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]";
-  }
-
-  const estaAbiertoCard = desplegadosMap[puente.id] || false;
-  const claseDesplegable = estaAbiertoCard ? "detalle-desplegable abierto" : "detalle-desplegable";
-  const claseFlecha = estaAbiertoCard ? "rotate-180" : "";
-
-  return `
-    <div class="${claseCard} rounded-2xl p-4 transition-all duration-300">
-      
-      <!-- Cabecera -->
-      <div class="flex justify-between items-start mb-2">
-        <div>
-          <div class="flex items-center space-x-1.5 mb-1">
-            <span class="inline-block px-2 py-0.5 rounded border text-[9px] font-bold ${badgeColor}">
-              ${badgeText}
-            </span>
-            <span class="bg-[#14202e] text-gray-400 px-2 py-0.5 rounded border border-gray-800 text-[9px] font-bold">
-              ${puente.km}
-            </span>
-          </div>
-          <h2 class="text-lg font-black text-white tracking-wide">${puente.nombre}</h2>
-          <p class="text-[11px] text-gray-400">Monitoreo continuo • Cuenca Rímac</p>
-        </div>
-        
-        <button onclick="togglePuente('${puente.id}')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold ${bgTag} flex items-center space-x-1.5 shadow-lg active:scale-95 transition-transform">
-          <span>🚩 ${actual.estado.toUpperCase()}</span>
-          <span id="flecha-${puente.id}" class="text-[10px] transition-transform duration-300 ${claseFlecha}">▼</span>
-        </button>
-      </div>
-
-      <!-- Métricas Cortas -->
-      <div class="grid grid-cols-2 gap-2 my-3">
-        <div class="bg-[#14202e] p-2.5 rounded-xl border border-gray-800/80">
-          <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">ALTURA DE AGUA</span>
-          <span class="text-base font-black text-white block mt-0.5">${nivelMetros} <span class="text-xs font-normal text-gray-400">m</span></span>
-          <span class="text-[9px] ${estaCerrado ? 'text-red-400' : 'text-emerald-400'} font-semibold mt-0.5 block">
-            ${estaCerrado ? '⚠️ Peligro' : '✓ Normal'}
-          </span>
-        </div>
-
-        <div class="bg-[#14202e] p-2.5 rounded-xl border border-gray-800/80">
-          <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">ALTURA DEL PUENTE</span>
-          <span class="text-base font-black text-white block mt-0.5">${puente.alturaMetros.toFixed(2)} <span class="text-xs font-normal text-gray-400">m</span></span>
-          <span class="text-[9px] text-gray-400 font-semibold mt-0.5 block">Estructura Fija</span>
-        </div>
-      </div>
-
-      <!-- Barra de Capacidad -->
-      <div class="space-y-1">
-        <div class="flex justify-between text-[10px] font-bold">
-          <span class="text-gray-400">Capacidad cauce (Límite ${puente.alturaMetros.toFixed(2)}m)</span>
-          <span class="${estaCerrado ? 'text-red-400' : 'text-emerald-400'}">${porcentaje}%</span>
-        </div>
-        <div class="w-full bg-gray-900 h-2 rounded-full overflow-hidden p-0.5 border border-gray-800">
-          <div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${porcentaje}%"></div>
-        </div>
-      </div>
-
-      <!-- SECCIÓN DESPLEGABLE -->
-      <div id="detalle-${puente.id}" class="${claseDesplegable} border-t border-gray-800/80 pt-3 mt-3 space-y-4">
-        
-        <!-- Cámara / Imagen del Puente -->
-        <div class="relative rounded-2xl overflow-hidden border border-gray-700/60 shadow-xl">
-          <img src="${puente.imagen}" alt="Vista ${puente.nombre}" class="w-full h-36 object-cover">
-          <div class="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>CAM EN VIVO</span>
-          </div>
-        </div>
-
-        <!-- Historial de Estados Recientes -->
-        <div class="space-y-2">
-          <h4 class="text-[11px] font-black text-gray-200 uppercase tracking-wider">Historial de Registros</h4>
-          <div class="space-y-2 border-l-2 border-gray-800 ml-1.5 pl-3">
-            ${puente.historial.map(item => {
-              const itemM = (item.nivelCaudalCm / 100).toFixed(2);
-              const isC = item.estado.toLowerCase().includes("cerrad");
-              return `
-                <div class="flex justify-between items-center bg-[#111a26] p-2 rounded-xl border border-gray-800/60 text-xs">
-                  <div>
-                    <span class="text-gray-200 font-bold block">${item.estado}</span>
-                    <span class="text-[10px] text-gray-500 font-mono">${item.fecha}</span>
-                  </div>
-                  <span class="px-2 py-0.5 rounded border font-mono font-bold ${isC ? 'bg-red-950 text-red-400 border-red-800' : 'bg-emerald-950 text-emerald-400 border-emerald-800'}">
-                    ${itemM} m
-                  </span>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  `;
+function tarjetaMapa(p) {
+  const r = actual(p), c = estadoClase(r.estado), image = p.imagen ? `style="--bridge-image:url('${escapar(p.imagen)}')"` : "";
+  const url = p.mapaUrl || "";
+  return `<article class="map-card ${c}"><div class="map-preview ${p.imagen ? "has-image" : ""}" ${image}><span class="map-pin">⌖</span><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span>${url ? `<a class="map-open" href="${escapar(url)}" target="_blank" rel="noopener">↗ Ver en mapa</a>` : `<span class="map-open disabled">Ruta pendiente</span>`}</div><div class="map-card-body"><div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="distance">KM ${escapar(p.km)}</span></div><p class="map-status ${c}">${c === "open" ? "✓ Tránsito vehicular normal" : c === "warning" ? "! Caudal en alerta" : "⚠ Nivel crítico de caudal"}</p></div></article>`;
 }
-
-// Abrir / Cerrar tarjetas individualmente
-function togglePuente(id) {
-  desplegadosMap[id] = !desplegadosMap[id];
-  renderizarTodosLosPuentes();
+function renderUsuario() {
+  document.getElementById("user-name").textContent = perfilUsuario.nombre;
+  document.getElementById("user-email").textContent = perfilUsuario.correo;
+  const emergency = document.getElementById("user-emergency"); emergency.textContent = perfilUsuario.emergencia; emergency.href = `tel:${perfilUsuario.emergencia.replace(/[^+\d]/g, "")}`;
+  document.getElementById("municipality-name").textContent = perfilUsuario.municipalidad;
+  document.getElementById("municipality-phone").textContent = perfilUsuario.telefonoMunicipal;
+  const whatsapp = document.getElementById("municipality-whatsapp"); whatsapp.textContent = perfilUsuario.whatsappMunicipal; whatsapp.href = `https://wa.me/${perfilUsuario.whatsappMunicipal.replace(/\D/g, "")}`;
+  document.getElementById("emergency-call").href = `tel:${perfilUsuario.telefonoMunicipal.replace(/[^+\d]/g, "")}`;
+  const elegidos = listaPuentes.filter(p => asignados.includes(p.id));
+  document.getElementById("assigned-count").textContent = `${elegidos.length} seleccionado${elegidos.length === 1 ? "" : "s"}`;
+  document.getElementById("assigned-bridges").innerHTML = elegidos.map(p => `<label class="assigned-row selected ${estadoClase(actual(p).estado)}"><span class="assigned-name"><b>${escapar(p.nombre)}</b><small>Monitoreo en Tiempo Real</small></span><input type="checkbox" checked onchange="toggleAsignado('${escapar(p.id)}',this.checked)" aria-label="Dejar de seguir ${escapar(p.nombre)}"><span class="selected-check">✓</span></label>`).join("") + listaPuentes.filter(p => !asignados.includes(p.id)).map(p => `<label class="assigned-row unselected"><span class="assigned-name"><b>${escapar(p.nombre)}</b><small>Normal</small></span><input type="checkbox" onchange="toggleAsignado('${escapar(p.id)}',this.checked)" aria-label="Seguir ${escapar(p.nombre)}"></label>`).join("");
 }
-
-// Modal control
-function abrirModal() {
-  document.getElementById("modal-agregar").classList.remove("hidden");
-}
-
-function cerrarModal() {
-  document.getElementById("modal-agregar").classList.add("hidden");
-}
-
-// ============================================================================
-// REGISTRO MANUAL → ahora se guarda en Neon a través de la API
-// ============================================================================
-async function agregarRegistroManual(e) {
-  e.preventDefault();
-
-  const nombre = document.getElementById("input-nombre").value.trim();
-  const nivelCm = parseFloat(document.getElementById("input-caudal").value);
-  const alturaM = parseFloat(document.getElementById("input-altura").value);
-  const estado = document.getElementById("select-estado").value;
-  const imagen = document.getElementById("input-imagen").value || "./img/puente-carapongo.png";
-
-  const boton = e.submitter;
-  if (boton) { boton.disabled = true; boton.textContent = "Guardando..."; }
-
-  try {
-    const res = await fetch(`${API_URL}/alertas`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nombre_puente: nombre,
-        nivel_caudal: nivelCm,   // en centímetros
-        estado_puente: estado
-      })
-    });
-    if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-
-    // Traer lo último desde Neon y luego aplicar los datos que solo viven en la app
-    await sincronizarConAPI();
-    const puente = listaPuentes.find(p => p.id === idDesdeNombre(nombre));
-    if (puente) {
-      puente.alturaMetros = alturaM;
-      puente.imagen = imagen;
-      guardarEnLocalStorage();
-    }
-
-    cerrarModal();
-    renderizarTodosLosPuentes();
-    document.getElementById("form-nuevo-puente").reset();
-  } catch (err) {
-    console.error(err);
-    alert("No se pudo guardar en el servidor. Si hace rato no lo usas, Render puede estar despertando: espera unos segundos y vuelve a intentar.");
-  } finally {
-    if (boton) { boton.disabled = false; boton.textContent = "Guardar Registro"; }
-  }
-}
-
-// Filtros superiores
-function filtrarPuentes(tipo) {
-  filtroActual = tipo;
-  
-  // Cambiar estilos de los botones
-  document.querySelectorAll("[id^='btn-filtro-']").forEach(btn => {
-    btn.className = "px-3 py-1 bg-[#172436] text-gray-400 rounded-lg font-semibold";
-  });
-  
-  const btnActivo = document.getElementById(`btn-filtro-${tipo}`);
-  if (btnActivo) {
-    btnActivo.className = "px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded-lg font-bold";
-  }
-
-  renderizarTodosLosPuentes();
-}
+function toggleAsignado(id, checked) { asignados = checked ? [...new Set([...asignados, id])] : asignados.filter(x => x !== id); guardar(STORAGE_KEYS.assigned, asignados); renderizar(); }
