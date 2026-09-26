@@ -4,16 +4,16 @@
 // mapaUrl: pega aquí el enlace manual a Google Maps (o al mapa que uses).
 // Coordenadas tomadas de los enlaces de Google Maps compartidos para cada puente.
 const puentesIniciales = [
-  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", coordenadas: { lat: -12.006677541154438, lon: -76.86724132554801 }, alturaMetros: 18.5, imagen: "./Img/puente-carapongo.png", mapaUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801", mapaEmbedUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801&output=embed", historial: [
+  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", coordenadas: { lat: -12.006677541154438, lon: -76.86724132554801 }, alturaMetros: 18.5, imagen: "./Img/puente carapongo.png", mapaUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801", mapaEmbedUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801&output=embed", historial: [
     { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 143 },
     { fecha: "2026-09-09 13:10:00", estado: "Abierto", nivelCaudalCm: 139 },
     { fecha: "2026-09-09 10:00:00", estado: "Abierto", nivelCaudalCm: 121 }
   ] },
-  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", coordenadas: { lat: -12.013213147310912, lon: -76.89223339596234 }, alturaMetros: 15.5, imagen: "", mapaUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234", mapaEmbedUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234&output=embed", historial: [
+  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", coordenadas: { lat: -12.013213147310912, lon: -76.89223339596234 }, alturaMetros: 15.5, imagen: "./Img/Puente Los Angeles.png", mapaUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234", mapaEmbedUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234&output=embed", historial: [
     { fecha: "2026-09-09 15:25:00", estado: "Alerta", nivelCaudalCm: 1054 },
     { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 920 }
   ] },
-  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", coordenadas: { lat: -11.968437599999998, lon: -76.7459362 }, alturaMetros: 15, imagen: "", mapaUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362", mapaEmbedUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362&output=embed", historial: [
+  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", coordenadas: { lat: -11.968437599999998, lon: -76.7459362 }, alturaMetros: 15, imagen: "./Img/Puente Chaclacayo.png", mapaUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362", mapaEmbedUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362&output=embed", historial: [
     { fecha: "2026-09-09 18:30:00", estado: "Cerrado", nivelCaudalCm: 1498 },
     { fecha: "2026-09-09 17:15:00", estado: "Alerta", nivelCaudalCm: 1453 },
     { fecha: "2026-09-09 14:00:00", estado: "Abierto", nivelCaudalCm: 1210 },
@@ -41,13 +41,38 @@ let ubicacionUsuario = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   listaPuentes = leerJSON(STORAGE_KEYS.bridges, puentesIniciales);
+  const imagenesPuentes = {
+    carapongo: "./Img/puente carapongo.png",
+    losangeles: "./Img/Puente Los Angeles.png",
+    chaclacayo: "./Img/Puente Chaclacayo.png"
+  };
+  listaPuentes.forEach(p => { if (imagenesPuentes[p.id]) p.imagen = imagenesPuentes[p.id]; });
   const puentePrincipal = listaPuentes.find(p => p.id === "chaclacayo") || listaPuentes[0];
   asignados = leerJSON(STORAGE_KEYS.assigned, puentePrincipal ? [puentePrincipal.id] : []);
   document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => cambiarPagina(btn.dataset.page)));
+  document.getElementById("profile-shortcut").addEventListener("click", () => cambiarPagina("usuario"));
+  document.getElementById("new-bridge-button").addEventListener("click", abrirNuevoPuente);
+  document.getElementById("close-new-bridge").addEventListener("click", cerrarNuevoPuente);
+  document.getElementById("cancel-new-bridge").addEventListener("click", cerrarNuevoPuente);
+  document.getElementById("new-bridge-dialog").addEventListener("click", e => { if (e.target.id === "new-bridge-dialog") cerrarNuevoPuente(); });
+  document.getElementById("new-bridge-form").addEventListener("submit", guardarNuevoPuente);
   const botonUbicacion = document.getElementById("location-button");
   if (botonUbicacion) botonUbicacion.addEventListener("click", solicitarUbicacion);
   document.getElementById("search-widgets").addEventListener("input", e => { consultaWidget = e.target.value.trim().toLocaleLowerCase("es"); renderWidgets(); });
-  document.getElementById("search-maps").addEventListener("input", e => { consultaMapa = e.target.value.trim().toLocaleLowerCase("es"); renderMapa(); });
+  const mapSearchInput = document.getElementById("search-maps");
+  const clearMapSearch = document.getElementById("clear-map-search");
+  mapSearchInput.addEventListener("input", e => {
+    consultaMapa = e.target.value.trim().toLocaleLowerCase("es");
+    clearMapSearch.classList.toggle("visible", Boolean(e.target.value));
+    renderMapa();
+  });
+  clearMapSearch.addEventListener("click", () => {
+    mapSearchInput.value = "";
+    consultaMapa = "";
+    clearMapSearch.classList.remove("visible");
+    renderMapa();
+    mapSearchInput.focus();
+  });
   const pref = document.getElementById("pref-alerts");
   pref.checked = localStorage.getItem(STORAGE_KEYS.alerts) !== "false";
   pref.addEventListener("change", () => localStorage.setItem(STORAGE_KEYS.alerts, pref.checked));
@@ -87,8 +112,14 @@ function construirFiltros(targetId, selected, handler) {
 }
 function renderWidgets() {
   const counts = conteosEstado();
-  document.getElementById("status-summary").innerHTML = `<span class="summary-all">${listaPuentes.length} <small>Puentes</small></span><span class="summary-open"><i></i>${counts.open} Abierto${counts.open === 1 ? "" : "s"}</span><span class="summary-warning"><i></i>${counts.warning} Alerta${counts.warning === 1 ? "" : "s"}</span><span class="summary-closed"><i></i>${counts.closed} Cerrado${counts.closed === 1 ? "" : "s"}</span>`;
-  construirFiltros("widget-filters", filtroWidget, v => { filtroWidget = v; renderWidgets(); });
+  const estados = [
+    { filtro: "Abierto", clase: "open", label: "Abierto", total: counts.open },
+    { filtro: "Alerta", clase: "warning", label: "Alerta", total: counts.warning },
+    { filtro: "Cerrado", clase: "closed", label: "Crítico", total: counts.closed }
+  ];
+  const resumen = document.getElementById("status-summary");
+  resumen.innerHTML = estados.map(item => `<button class="summary-chip ${item.clase} ${filtroWidget === item.filtro ? "selected" : ""}" type="button" data-filter="${item.filtro}" aria-pressed="${filtroWidget === item.filtro}"><i></i><b>${item.total}</b><span>${item.label}</span></button>`).join("");
+  resumen.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => { filtroWidget = filtroWidget === btn.dataset.filter ? "Todos" : btn.dataset.filter; renderWidgets(); }));
   const items = listaPuentes.filter(p => coincide(p, consultaWidget) && coincideFiltro(p, filtroWidget));
   document.getElementById("puentes-container").innerHTML = items.length ? items.map(tarjetaWidget).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
 }
@@ -113,21 +144,55 @@ function tarjetaWidget(p) {
   </article>`;
 }
 function solicitarUbicacion() {
-  const label = document.getElementById("location-label");
   const boton = document.getElementById("location-button");
-  if (!navigator.geolocation) { label.textContent = "Este navegador no permite acceder a la ubicación"; return; }
+  if (!navigator.geolocation) { mostrarEstadoUbicacion("Este navegador no permite acceder a la ubicación"); return; }
   boton.disabled = true;
-  label.textContent = "Buscando tu ubicación…";
+  mostrarEstadoUbicacion("Buscando tu ubicación…");
   navigator.geolocation.getCurrentPosition(pos => {
     ubicacionUsuario = { lat: pos.coords.latitude, lon: pos.coords.longitude };
     boton.disabled = false;
     const faltanCoordenadas = listaPuentes.some(p => distanciaPuenteKm(p) === null);
-    label.textContent = faltanCoordenadas ? "Ubicación activa · faltan coordenadas de algunos puentes" : "Ubicación activa · distancias calculadas desde ti";
+    mostrarEstadoUbicacion(faltanCoordenadas ? "Ubicación activa · faltan coordenadas de algunos puentes" : "Ubicación activa · distancias calculadas desde ti");
     renderWidgets();
   }, error => {
     boton.disabled = false;
-    label.textContent = error.code === 1 ? "Permiso denegado · permite ubicación en el navegador" : "No se pudo obtener la ubicación · intenta de nuevo";
+    mostrarEstadoUbicacion(error.code === 1 ? "Permiso denegado · permite ubicación en el navegador" : "No se pudo obtener la ubicación · intenta de nuevo");
   }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+}
+function mostrarEstadoUbicacion(mensaje) {
+  const label = document.getElementById("location-label");
+  label.textContent = mensaje;
+  label.classList.add("visible");
+}
+function abrirNuevoPuente() {
+  const dialogo = document.getElementById("new-bridge-dialog");
+  dialogo.classList.add("open");
+  dialogo.setAttribute("aria-hidden", "false");
+  dialogo.querySelector("input[name='nombre']").focus();
+}
+function cerrarNuevoPuente() {
+  const dialogo = document.getElementById("new-bridge-dialog");
+  dialogo.classList.remove("open");
+  dialogo.setAttribute("aria-hidden", "true");
+}
+function guardarNuevoPuente(event) {
+  event.preventDefault();
+  const datos = new FormData(event.currentTarget);
+  const nombre = String(datos.get("nombre") || "").trim();
+  const idBase = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const id = listaPuentes.some(p => p.id === idBase) ? `${idBase}-${Date.now().toString(36)}` : idBase;
+  const ahora = new Date().toISOString().replace("T", " ").slice(0, 19);
+  listaPuentes.unshift({
+    id, nombre, km: String(datos.get("km") || "—").trim(), coordenadas: { lat: null, lon: null },
+    alturaMetros: Number(datos.get("altura")), imagen: "", mapaUrl: "", historial: [
+      { fecha: ahora, estado: String(datos.get("estado")), nivelCaudalCm: Number(datos.get("nivel")) }
+    ]
+  });
+  guardar(STORAGE_KEYS.bridges, listaPuentes);
+  filtroWidget = "Todos";
+  event.currentTarget.reset();
+  cerrarNuevoPuente();
+  renderizar();
 }
 function distanciaPuenteKm(p) {
   const lat = Number(p.coordenadas?.lat), lon = Number(p.coordenadas?.lon);
@@ -164,7 +229,7 @@ function renderMapa() {
 function tarjetaMapa(p) {
   const r = actual(p), c = estadoClase(r.estado), image = p.imagen ? `style="--bridge-image:url('${escapar(p.imagen)}')"` : "";
   const url = p.mapaUrl || "";
-  const mapa = p.mapaEmbedUrl ? `<iframe class="map-frame" src="${escapar(p.mapaEmbedUrl)}" title="Mapa de ${escapar(p.nombre)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : `<span class="map-pin">⌖</span>`;
+  const mapa = p.imagen ? "" : `<span class="map-pin">⌖</span>`;
   return `<article class="map-card ${c}"><div class="map-preview ${p.imagen ? "has-image" : ""}" ${image}>${mapa}<span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span>${url ? `<a class="map-open" href="${escapar(url)}" target="_blank" rel="noopener">⌖ Ver en mapa</a>` : `<span class="map-open disabled">Ruta pendiente</span>`}</div><div class="map-card-body"><div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="distance">KM ${escapar(p.km)}</span></div><p class="map-status ${c}">${c === "open" ? "✓ Tránsito vehicular normal" : c === "warning" ? "! Caudal en alerta" : "⚠ Nivel crítico de caudal"}</p></div></article>`;
 }
 function renderUsuario() {

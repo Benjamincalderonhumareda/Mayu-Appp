@@ -1,0 +1,20 @@
+{
+  "name": "MayuAlert · Monitoreo de puentes",
+  "short_name": "MayuAlert",
+  "description": "Monitoreo de puentes del Rímac",
+  "lang": "es-PE",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101318",
+  "theme_color": "#101318",
+  "icons": [
+    {
+      "src": "./Img/logo-mayu.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

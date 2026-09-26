@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#101318">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MayuAlert">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/svg+xml" href="./Img/logo-mayu.svg">
+  <link rel="apple-touch-icon" href="./Img/logo-mayu.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
   <title>MayuAlert · Monitoreo de puentes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,17 +26,16 @@
 
     <main>
       <section class="page active" id="page-widgets" aria-labelledby="heading-widgets">
-        <div class="page-heading"><div><p class="eyebrow">ESTADO GENERAL DE PUENTES</p><h1 id="heading-widgets">Monitoreo</h1></div><span class="live-pill"><i></i> En vivo</span></div>
-        <button class="location-button" id="location-button" type="button"><span class="location-icon">⌖</span><span id="location-label">Usar mi ubicación para calcular distancias</span></button>
-        <label class="search"><span>⌕</span><input id="search-widgets" type="search" placeholder="Buscar puente por nombre o sector…" aria-label="Buscar puentes"></label>
+        <div class="widget-topbar"><h1 id="heading-widgets">Estado General de Puentes</h1><div class="widget-actions"><button class="new-bridge-button" id="new-bridge-button" type="button"><span>＋</span> Nuevo</button><button class="profile-shortcut" id="profile-shortcut" type="button" aria-label="Abrir perfil de usuario"><span class="material-symbols-outlined">person</span></button></div></div>
+        <div class="widget-search-row"><label class="search"><span>⌕</span><input id="search-widgets" type="search" placeholder="Buscar puente por nombre o sector…" aria-label="Buscar puentes"></label><button class="location-button" id="location-button" type="button" aria-label="Usar mi ubicación" title="Calcular distancia desde mi ubicación"><span class="material-symbols-outlined">my_location</span></button></div>
+        <span class="location-status" id="location-label" role="status" aria-live="polite"></span>
         <div class="summary" id="status-summary"></div>
-        <div class="filter-row" id="widget-filters" aria-label="Filtrar puentes"></div>
         <div id="puentes-container" class="bridge-list"></div>
       </section>
 
       <section class="page" id="page-mapa" aria-labelledby="heading-mapa">
         <div class="page-heading"><div><p class="eyebrow">UBICACIONES</p><h1 id="heading-mapa">Mapa de puentes</h1></div><span class="heading-icon">⌖</span></div>
-        <label class="search"><span>⌕</span><input id="search-maps" type="search" placeholder="Buscar puente en el mapa…" aria-label="Buscar en mapas"></label>
+        <div class="map-search-row"><label class="search"><span>⌕</span><input id="search-maps" type="search" placeholder="Buscar puente en mapa…" aria-label="Buscar en mapas"><button id="clear-map-search" class="clear-map-search" type="button" aria-label="Limpiar búsqueda">×</button></label></div>
         <div id="map-filters" class="filter-row" aria-label="Filtrar puentes en el mapa"></div>
         <div id="map-container" class="bridge-list"></div>
         <div class="map-footnote"><i></i><span id="map-count"></span><span class="separator">·</span> Ubicaciones configuradas manualmente</div>
@@ -41,11 +46,11 @@
       </section>
 
       <section class="page" id="page-usuario" aria-labelledby="heading-usuario">
-        <div class="user-page-heading"><div><h1 id="heading-usuario">Perfil de Usuario</h1><p>MAYU · TELEMETRÍA RÍMAC</p></div></div>
+        <div class="user-page-heading"><div><h1 id="heading-usuario">Perfil de Usuario</h1></div></div>
         <article class="profile-card">
           <div class="profile-top"><div class="profile-avatar"><span class="material-symbols-outlined">shield_person</span><i></i></div><div class="profile-main"><h2 id="user-name"></h2><div class="user-badges"><span class="operator-badge"><i></i>OPERADOR ACTIVO</span></div></div></div>
           <div class="profile-contact"><span class="material-symbols-outlined">mail</span><b id="user-email"></b><span class="official-badge">OFICIAL</span></div>
-          <div class="profile-contact"><span class="material-symbols-outlined">phone_in_talk</span><b>EMERGENCIA 24H:</b><a id="user-emergency"></a></div>
+          <div class="profile-contact"><span class="material-symbols-outlined">phone_in_talk</span><b>NUMERO:</b><a id="user-emergency"></a></div>
         </article>
         <section class="settings-card user-alert-settings">
           <div class="section-title"><h2><span class="user-section-icon"><span class="material-symbols-outlined">notifications_active</span></span> RECIBIR NOTIFICACIONES</h2><span class="alert-frequency">ALERTAS 24/7</span></div>
@@ -67,6 +72,15 @@
       <button class="nav-item" data-page="mapa"><span>⌖</span><small>Mapa</small></button>
       <button class="nav-item" data-page="usuario"><span>♙</span><small>Usuario</small></button>
     </nav>
+  </div>
+  <div class="dialog-backdrop" id="new-bridge-dialog" aria-hidden="true">
+    <form class="new-bridge-form" id="new-bridge-form">
+      <div class="dialog-title"><h2>Registrar puente</h2><button type="button" id="close-new-bridge" aria-label="Cerrar">×</button></div>
+      <label>Nombre del puente<input name="nombre" type="text" required maxlength="60" placeholder="Ej. Puente Santa Clara"></label>
+      <div class="dialog-two-col"><label>KM del río<input name="km" type="text" maxlength="12" placeholder="Ej. 20.5"></label><label>Altura del puente (m)<input name="altura" type="number" min="0.1" step="0.01" required placeholder="15.00"></label></div>
+      <div class="dialog-two-col"><label>Nivel de agua (cm)<input name="nivel" type="number" min="0" step="0.1" required placeholder="120"></label><label>Estado<select name="estado"><option>Abierto</option><option>Alerta</option><option>Cerrado</option></select></label></div>
+      <div class="dialog-actions"><button type="button" id="cancel-new-bridge">Cancelar</button><button type="submit">Guardar puente</button></div>
+    </form>
   </div>
   <script src="app.js"></script>
 </body>
