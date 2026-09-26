@@ -2,17 +2,18 @@
 // Sustituye esta lista por la respuesta de tu API cuando conectes el endpoint.
 // imagen: pega aquí la ruta de la foto/cámara de cada puente.
 // mapaUrl: pega aquí el enlace manual a Google Maps (o al mapa que uses).
+// Coordenadas tomadas de los enlaces de Google Maps compartidos para cada puente.
 const puentesIniciales = [
-  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", alturaMetros: 18.5, imagen: "./Img/puente-carapongo.png", mapaUrl: "", historial: [
+  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", coordenadas: { lat: -12.006677541154438, lon: -76.86724132554801 }, alturaMetros: 18.5, imagen: "./Img/puente-carapongo.png", mapaUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801", historial: [
     { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 143 },
     { fecha: "2026-09-09 13:10:00", estado: "Abierto", nivelCaudalCm: 139 },
     { fecha: "2026-09-09 10:00:00", estado: "Abierto", nivelCaudalCm: 121 }
   ] },
-  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", alturaMetros: 15.5, imagen: "", mapaUrl: "", historial: [
+  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", coordenadas: { lat: -12.013213147310912, lon: -76.89223339596234 }, alturaMetros: 15.5, imagen: "", mapaUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234", historial: [
     { fecha: "2026-09-09 15:25:00", estado: "Alerta", nivelCaudalCm: 1054 },
     { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 920 }
   ] },
-  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", alturaMetros: 15, imagen: "", mapaUrl: "", historial: [
+  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", coordenadas: { lat: -11.968437599999998, lon: -76.7459362 }, alturaMetros: 15, imagen: "", mapaUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362", historial: [
     { fecha: "2026-09-09 18:30:00", estado: "Cerrado", nivelCaudalCm: 1498 },
     { fecha: "2026-09-09 17:15:00", estado: "Alerta", nivelCaudalCm: 1453 },
     { fecha: "2026-09-09 14:00:00", estado: "Abierto", nivelCaudalCm: 1210 },
@@ -36,12 +37,14 @@ let filtroMapa = "Todos";
 let consultaWidget = "";
 let consultaMapa = "";
 let asignados = [];
+let ubicacionUsuario = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   listaPuentes = leerJSON(STORAGE_KEYS.bridges, puentesIniciales);
   const puentePrincipal = listaPuentes.find(p => p.id === "chaclacayo") || listaPuentes[0];
   asignados = leerJSON(STORAGE_KEYS.assigned, puentePrincipal ? [puentePrincipal.id] : []);
   document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => cambiarPagina(btn.dataset.page)));
+  document.getElementById("location-button").addEventListener("click", solicitarUbicacion);
   document.getElementById("search-widgets").addEventListener("input", e => { consultaWidget = e.target.value.trim().toLocaleLowerCase("es"); renderWidgets(); });
   document.getElementById("search-maps").addEventListener("input", e => { consultaMapa = e.target.value.trim().toLocaleLowerCase("es"); renderMapa(); });
   const pref = document.getElementById("pref-alerts");
@@ -94,13 +97,44 @@ function vacio(mensaje) { return `<div class="empty-state"><span>⌕</span><p>${
 function tarjetaWidget(p) {
   const r = actual(p), c = estadoClase(r.estado), pct = porcentaje(p);
   const agua = (r.nivelCaudalCm / 100).toFixed(2);
+  const distancia = distanciaPuenteKm(p);
+  const etiquetaDistancia = distancia === null
+    ? `${ubicacionUsuario ? "FALTA COORD. · " : ""}KM ${escapar(p.km)} DEL RÍO`
+    : `DISTANCIA: ${distancia.toFixed(1)} KM`;
   return `<article class="bridge-card ${c}" role="button" tabindex="0" aria-label="Ver detalles de ${escapar(p.nombre)}" onclick="abrirDetalle('${escapar(p.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirDetalle('${escapar(p.id)}')}">
-    <div class="bridge-top"><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span><span class="distance">KM ${escapar(p.km)}</span></div>
+    <div class="bridge-status-head"><span class="bridge-location">△ ${escapar(p.nombre).toLocaleUpperCase("es")} · ${etiquetaDistancia}</span><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span></div>
+    <div class="bridge-body">
     <div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="bridge-id">${escapar(p.id.toUpperCase())}</span></div>
     <div class="metrics"><div class="metric"><span>ALTURA AGUA</span><b>${agua}<small> m</small></b></div><div class="metric"><span>ALTURA PUENTE</span><b>${Number(p.alturaMetros).toFixed(2)}<small> m</small></b></div></div>
     <div class="capacity"><div class="capacity-label"><span>Capacidad</span><b>${pct}%</b></div><div class="capacity-track"><i style="width:${pct}%"></i></div></div>
     <div class="details-prompt"><span>⌁ &nbsp;Ver detalles</span><span>→</span></div>
+    </div>
   </article>`;
+}
+function solicitarUbicacion() {
+  const label = document.getElementById("location-label");
+  const boton = document.getElementById("location-button");
+  if (!navigator.geolocation) { label.textContent = "Este navegador no permite acceder a la ubicación"; return; }
+  boton.disabled = true;
+  label.textContent = "Buscando tu ubicación…";
+  navigator.geolocation.getCurrentPosition(pos => {
+    ubicacionUsuario = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    boton.disabled = false;
+    const faltanCoordenadas = listaPuentes.some(p => distanciaPuenteKm(p) === null);
+    label.textContent = faltanCoordenadas ? "Ubicación activa · faltan coordenadas de algunos puentes" : "Ubicación activa · distancias calculadas desde ti";
+    renderWidgets();
+  }, error => {
+    boton.disabled = false;
+    label.textContent = error.code === 1 ? "Permiso denegado · permite ubicación en el navegador" : "No se pudo obtener la ubicación · intenta de nuevo";
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+}
+function distanciaPuenteKm(p) {
+  const lat = Number(p.coordenadas?.lat), lon = Number(p.coordenadas?.lon);
+  if (!ubicacionUsuario || !Number.isFinite(lat) || !Number.isFinite(lon) || p.coordenadas?.lat == null || p.coordenadas?.lon == null) return null;
+  const rad = n => n * Math.PI / 180;
+  const dLat = rad(lat - ubicacionUsuario.lat), dLon = rad(lon - ubicacionUsuario.lon);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(ubicacionUsuario.lat)) * Math.cos(rad(lat)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 function contenidoDetalle(p) {
   const history = (p.historial || []).slice(0, 8), max = Math.max(Number(p.alturaMetros) * 100, ...history.map(x => Number(x.nivelCaudalCm) || 0), 1);
