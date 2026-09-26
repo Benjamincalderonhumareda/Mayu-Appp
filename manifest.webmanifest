@@ -11,10 +11,10 @@
   "theme_color": "#101318",
   "icons": [
     {
-      "src": "./Img/logo-mayu.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "./Img/logo-mayu.png",
+      "sizes": "457x395",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
