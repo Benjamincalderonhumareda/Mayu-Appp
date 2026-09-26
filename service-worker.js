@@ -1,14 +1,14 @@
-const CACHE_NAME = "mayualert-shell-v1";
+const CACHE_NAME = "mayualert-shell-v2";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./manifest.json",
-  "./apple-touch-icon.png",
-  "./Img/app-icon-192.png",
+  "./widget.js",
+  "./mapa.js",
+  "./usuario.js",
+  "./manifest.webmanifest",
   "./Img/app-icon-512.png",
-  "./Img/logo-mayu.png",
   "./Img/puente carapongo.png",
   "./Img/Puente Chaclacayo.png",
   "./Img/Puente Los Angeles.png"

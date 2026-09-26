@@ -95,6 +95,7 @@ function estadoLabel(estado) { const c = estadoClase(estado); return c === "clos
 function porcentaje(p) { return p.alturaMetros > 0 ? Math.min(Math.round(actual(p).nivelCaudalCm / (p.alturaMetros * 100) * 100), 100) : 0; }
 function escapar(valor) { return String(valor ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
 function renderizar() { renderWidgets(); renderMapa(); renderUsuario(); }
+function vacio(mensaje) { return `<div class="empty-state"><span>⌕</span><p>${mensaje}</p></div>`; }
 function cambiarPagina(id) {
   document.querySelectorAll(".page").forEach(el => el.classList.toggle("active", el.id === `page-${id}`));
   const navPage = id === "detalle" ? "widgets" : id;
@@ -109,39 +110,6 @@ function construirFiltros(targetId, selected, handler) {
   const opciones = [["Todos", listaPuentes.length], ["Cerrado", counts.closed], ["Alerta", counts.warning], ["Abierto", counts.open]];
   document.getElementById(targetId).innerHTML = opciones.map(([label, count]) => `<button class="filter-chip ${selected === label ? "selected" : ""}" data-filter="${label}"><span class="dot ${label === "Todos" ? "all" : estadoClase(label)}"></span>${label}<b>${count}</b></button>`).join("");
   document.getElementById(targetId).querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => handler(btn.dataset.filter)));
-}
-function renderWidgets() {
-  const counts = conteosEstado();
-  const estados = [
-    { filtro: "Abierto", clase: "open", label: "Abierto", total: counts.open },
-    { filtro: "Alerta", clase: "warning", label: "Alerta", total: counts.warning },
-    { filtro: "Cerrado", clase: "closed", label: "Crítico", total: counts.closed }
-  ];
-  const resumen = document.getElementById("status-summary");
-  resumen.innerHTML = estados.map(item => `<button class="summary-chip ${item.clase} ${filtroWidget === item.filtro ? "selected" : ""}" type="button" data-filter="${item.filtro}" aria-pressed="${filtroWidget === item.filtro}"><i></i><b>${item.total}</b><span>${item.label}</span></button>`).join("");
-  resumen.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => { filtroWidget = filtroWidget === btn.dataset.filter ? "Todos" : btn.dataset.filter; renderWidgets(); }));
-  const items = listaPuentes.filter(p => coincide(p, consultaWidget) && coincideFiltro(p, filtroWidget));
-  document.getElementById("puentes-container").innerHTML = items.length ? items.map(tarjetaWidget).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
-}
-function coincide(p, q) { return !q || `${p.nombre} ${p.km}`.toLocaleLowerCase("es").includes(q); }
-function coincideFiltro(p, filtro) { return filtro === "Todos" || estadoLabel(actual(p).estado) === filtro; }
-function vacio(mensaje) { return `<div class="empty-state"><span>⌕</span><p>${mensaje}</p></div>`; }
-function tarjetaWidget(p) {
-  const r = actual(p), c = estadoClase(r.estado), pct = porcentaje(p);
-  const agua = (r.nivelCaudalCm / 100).toFixed(2);
-  const distancia = distanciaPuenteKm(p);
-  const etiquetaDistancia = distancia === null
-    ? `${ubicacionUsuario ? "FALTA COORD. · " : ""}KM ${escapar(p.km)} DEL RÍO`
-    : `DISTANCIA: ${distancia.toFixed(1)} KM`;
-  return `<article class="bridge-card ${c}" role="button" tabindex="0" aria-label="Ver detalles de ${escapar(p.nombre)}" onclick="abrirDetalle('${escapar(p.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirDetalle('${escapar(p.id)}')}">
-    <div class="bridge-status-head"><span class="bridge-location">△ ${escapar(p.nombre).toLocaleUpperCase("es")} · ${etiquetaDistancia}</span><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span></div>
-    <div class="bridge-body">
-    <div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="bridge-id">${escapar(p.id.toUpperCase())}</span></div>
-    <div class="metrics"><div class="metric"><span>ALTURA AGUA</span><b>${agua}<small> m</small></b></div><div class="metric"><span>ALTURA PUENTE</span><b>${Number(p.alturaMetros).toFixed(2)}<small> m</small></b></div></div>
-    <div class="capacity"><div class="capacity-label"><span>Capacidad</span><b>${pct}%</b></div><div class="capacity-track"><i style="width:${pct}%"></i></div></div>
-    <div class="details-prompt"><span>⌁ &nbsp;Ver detalles</span><span>→</span></div>
-    </div>
-  </article>`;
 }
 function solicitarUbicacion() {
   const boton = document.getElementById("location-button");
@@ -220,32 +188,3 @@ function abrirDetalle(id) {
   cambiarPagina("detalle");
 }
 function volverAWidgets() { cambiarPagina("widgets"); }
-function renderMapa() {
-  construirFiltros("map-filters", filtroMapa, v => { filtroMapa = v; renderMapa(); });
-  const items = listaPuentes.filter(p => coincide(p, consultaMapa) && coincideFiltro(p, filtroMapa));
-  document.getElementById("map-container").innerHTML = items.length ? items.map(tarjetaMapa).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
-  document.getElementById("map-count").textContent = `${items.length} ${items.length === 1 ? "estación" : "estaciones"}`;
-}
-function tarjetaMapa(p) {
-  const r = actual(p), c = estadoClase(r.estado), image = p.imagen ? `style="--bridge-image:url('${escapar(p.imagen)}')"` : "";
-  const url = p.mapaUrl || "";
-  const mapa = p.imagen ? "" : `<span class="map-pin">⌖</span>`;
-  return `<article class="map-card ${c}"><div class="map-preview ${p.imagen ? "has-image" : ""}" ${image}>${mapa}<span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span>${url ? `<a class="map-open" href="${escapar(url)}" target="_blank" rel="noopener">⌖ Ver en mapa</a>` : `<span class="map-open disabled">Ruta pendiente</span>`}</div><div class="map-card-body"><div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="distance">KM ${escapar(p.km)}</span></div><p class="map-status ${c}">${c === "open" ? "✓ Tránsito vehicular normal" : c === "warning" ? "! Caudal en alerta" : "⚠ Nivel crítico de caudal"}</p></div></article>`;
-}
-function renderUsuario() {
-  document.getElementById("user-name").textContent = perfilUsuario.nombre;
-  document.getElementById("user-email").textContent = perfilUsuario.correo;
-  const emergency = document.getElementById("user-emergency"); emergency.textContent = perfilUsuario.emergencia; emergency.href = `tel:${perfilUsuario.emergencia.replace(/[^+\d]/g, "")}`;
-  document.getElementById("municipality-name").textContent = perfilUsuario.municipalidad;
-  document.getElementById("municipality-phone").textContent = perfilUsuario.telefonoMunicipal;
-  const whatsapp = document.getElementById("municipality-whatsapp"); whatsapp.textContent = perfilUsuario.whatsappMunicipal; whatsapp.href = `https://wa.me/${perfilUsuario.whatsappMunicipal.replace(/\D/g, "")}`;
-  document.getElementById("emergency-call").href = `tel:${perfilUsuario.telefonoMunicipal.replace(/[^+\d]/g, "")}`;
-  const elegidos = listaPuentes.filter(p => asignados.includes(p.id));
-  document.getElementById("assigned-count").textContent = `${elegidos.length} seleccionado${elegidos.length === 1 ? "" : "s"}`;
-  const etiquetaSeguimiento = p => {
-    const clase = estadoClase(actual(p).estado);
-    return clase === "open" ? "EN VIVO · ÓPTIMO" : clase === "warning" ? "EN VIVO · ALERTA" : "EN VIVO · CERRADO";
-  };
-  document.getElementById("assigned-bridges").innerHTML = elegidos.map(p => `<label class="assigned-row selected ${estadoClase(actual(p).estado)}"><span class="assigned-name"><b>${escapar(p.nombre)}</b><small>${etiquetaSeguimiento(p)}</small></span><input type="checkbox" checked onchange="toggleAsignado('${escapar(p.id)}',this.checked)" aria-label="Dejar de seguir ${escapar(p.nombre)}"><span class="selected-check"><span class="material-symbols-outlined">check_circle</span></span></label>`).join("") + listaPuentes.filter(p => !asignados.includes(p.id)).map(p => `<label class="assigned-row unselected"><span class="assigned-name"><b>${escapar(p.nombre)}</b><small>${escapar(estadoLabel(actual(p).estado))}</small></span><input type="checkbox" onchange="toggleAsignado('${escapar(p.id)}',this.checked)" aria-label="Seguir ${escapar(p.nombre)}"><span class="unselected-check material-symbols-outlined">radio_button_unchecked</span></label>`).join("");
-}
-function toggleAsignado(id, checked) { asignados = checked ? [...new Set([...asignados, id])] : asignados.filter(x => x !== id); guardar(STORAGE_KEYS.assigned, asignados); renderizar(); }
