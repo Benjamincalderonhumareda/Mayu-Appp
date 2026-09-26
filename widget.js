@@ -16,17 +16,19 @@ function coincide(p, q) { return !q || `${p.nombre} ${p.km}`.toLocaleLowerCase("
 function coincideFiltro(p, filtro) { return filtro === "Todos" || estadoLabel(actual(p).estado) === filtro; }
 function tarjetaWidget(p) {
   const r = actual(p), c = estadoClase(r.estado), pct = porcentaje(p);
-  const agua = (r.nivelCaudalCm / 100).toFixed(2);
+  const agua = (Number(r.nivelCaudalCm) / 100).toFixed(2);
+  const alturaPuente = Number(p.alturaMetros) > 0 ? `${Number(p.alturaMetros).toFixed(2)}<small> m</small>` : "Pendiente";
+  const capacidad = pct === null ? "S/D" : `${pct}%`;
   const distancia = distanciaPuenteKm(p);
   const etiquetaDistancia = distancia === null
-    ? `${ubicacionUsuario ? "FALTA COORD. · " : ""}KM ${escapar(p.km)} DEL RÍO`
+    ? `${ubicacionUsuario ? "FALTA COORD. · " : ""}KM ${escapar(p.km || "—")}${p.km ? " DEL RÍO" : ""}`
     : `DISTANCIA: ${distancia.toFixed(1)} KM`;
   return `<article class="bridge-card ${c}" role="button" tabindex="0" aria-label="Ver detalles de ${escapar(p.nombre)}" onclick="abrirDetalle('${escapar(p.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirDetalle('${escapar(p.id)}')}">
     <div class="bridge-status-head"><span class="bridge-location">△ ${escapar(p.nombre).toLocaleUpperCase("es")} · ${etiquetaDistancia}</span><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span></div>
     <div class="bridge-body">
     <div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="bridge-id">${escapar(p.id.toUpperCase())}</span></div>
-    <div class="metrics"><div class="metric"><span>ALTURA AGUA</span><b>${agua}<small> m</small></b></div><div class="metric"><span>ALTURA PUENTE</span><b>${Number(p.alturaMetros).toFixed(2)}<small> m</small></b></div></div>
-    <div class="capacity"><div class="capacity-label"><span>Capacidad</span><b>${pct}%</b></div><div class="capacity-track"><i style="width:${pct}%"></i></div></div>
+    <div class="metrics"><div class="metric"><span>ALTURA AGUA</span><b>${agua}<small> m</small></b></div><div class="metric"><span>ALTURA PUENTE</span><b>${alturaPuente}</b></div></div>
+    <div class="capacity"><div class="capacity-label"><span>Capacidad</span><b>${capacidad}</b></div><div class="capacity-track"><i style="width:${pct ?? 0}%"></i></div></div>
     <div class="details-prompt"><span>⌁ &nbsp;Ver detalles</span><span>→</span></div>
     </div>
   </article>`;

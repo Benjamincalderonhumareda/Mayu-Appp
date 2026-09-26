@@ -1,5 +1,4 @@
-// Datos de muestra con la estructura que ya usa la app: puente + historial.
-// Sustituye esta lista por la respuesta de tu API cuando conectes el endpoint.
+// Datos base de puentes; sus lecturas se actualizan desde Mayu API cuando está disponible.
 // imagen: pega aquí la ruta de la foto/cámara de cada puente.
 // mapaUrl: pega aquí el enlace manual a Google Maps (o al mapa que uses).
 // Coordenadas tomadas de los enlaces de Google Maps compartidos para cada puente.
@@ -22,6 +21,7 @@ const puentesIniciales = [
 ];
 
 const STORAGE_KEYS = { bridges: "mayu_puentes_data_v2", assigned: "mayu_puentes_asignados_v2", alerts: "mayu_pref_alertas" };
+const API_URL = "https://prueba-de-ti-2.onrender.com";
 // Perfil de muestra basado en la maqueta. Reemplazar con la sesión/API al integrarla.
 const perfilUsuario = {
   nombre: "Ing. Benjamín Calderón",
@@ -77,7 +77,86 @@ document.addEventListener("DOMContentLoaded", () => {
   pref.checked = localStorage.getItem(STORAGE_KEYS.alerts) !== "false";
   pref.addEventListener("change", () => localStorage.setItem(STORAGE_KEYS.alerts, pref.checked));
   renderizar();
+  sincronizarAlertas();
+  window.setInterval(sincronizarAlertas, 15000);
 });
+
+async function sincronizarAlertas() {
+  const estadoApi = document.getElementById("api-status");
+  try {
+    const response = await fetch(`${API_URL}/alertas/historial`, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    const registros = Array.isArray(payload) ? payload : payload.alertas || payload.historial || payload.data || [];
+    if (!Array.isArray(registros)) throw new Error("La API no devolvió una lista de alertas");
+
+    const puentesAPI = new Map();
+    registros.forEach(registro => {
+      const nombre = String(registro.nombre_puente || "").trim();
+      const clave = normalizarNombrePuente(nombre);
+      if (!nombre || !clave) return;
+      if (!puentesAPI.has(clave)) puentesAPI.set(clave, []);
+      puentesAPI.get(clave).push(registro);
+    });
+
+    for (const [clave, filas] of puentesAPI) {
+      let puente = listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave);
+      if (!puente) {
+        puente = {
+          id: clave,
+          nombre: String(filas[0].nombre_puente).trim(),
+          km: "",
+          coordenadas: { lat: null, lon: null },
+          alturaMetros: null,
+          imagen: "",
+          mapaUrl: "",
+          historial: []
+        };
+        listaPuentes.push(puente);
+      }
+
+      const altura = filas.map(fila => numeroAPI(fila.altura_puente ?? fila.altura_del_puente)).find(valor => Number.isFinite(valor) && valor > 0);
+      if (altura !== undefined) puente.alturaMetros = altura;
+      puente.historial = filas.map(convertirLecturaAPI).filter(Boolean).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    }
+
+    if (estadoApi) {
+      estadoApi.textContent = "API conectada";
+      estadoApi.parentElement.classList.add("online");
+      estadoApi.parentElement.classList.remove("offline");
+    }
+    renderizar();
+  } catch (error) {
+    if (estadoApi) {
+      estadoApi.textContent = "API desconectada";
+      estadoApi.parentElement.classList.add("offline");
+      estadoApi.parentElement.classList.remove("online");
+    }
+    console.warn("No se pudieron cargar las alertas de Mayu API:", error.message);
+  }
+}
+
+function normalizarNombrePuente(nombre) {
+  return String(nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").replace(/[^a-z0-9]/g, "");
+}
+
+function numeroAPI(valor) {
+  if (valor === null || valor === undefined || valor === "") return NaN;
+  return Number(String(valor).replace(",", "."));
+}
+
+function convertirLecturaAPI(registro) {
+  const nivelMetros = numeroAPI(registro.altura_agua ?? registro.nivel_caudal);
+  if (!Number.isFinite(nivelMetros)) return null;
+  const estadoApi = String(registro.estado_puente || "normal").toLocaleLowerCase("es");
+  const estado = estadoApi.includes("cerr") || estadoApi.includes("critic")
+    ? "Cerrado"
+    : estadoApi.includes("alert") || estadoApi.includes("precauc")
+      ? "Alerta"
+      : "Abierto";
+  const fecha = registro.fecha || registro.fecha_registro || registro.created_at || registro.timestamp || new Date().toISOString();
+  return { fecha: String(fecha).replace("T", " ").slice(0, 19), estado, nivelCaudalCm: nivelMetros * 100 };
+}
 
 function leerJSON(clave, fallback) {
   try { const valor = localStorage.getItem(clave); return valor ? JSON.parse(valor) : fallback; }
@@ -92,7 +171,7 @@ function estadoClase(estado) {
   return "open";
 }
 function estadoLabel(estado) { const c = estadoClase(estado); return c === "closed" ? "Cerrado" : c === "warning" ? "Alerta" : estado === "Sin datos" ? estado : "Abierto"; }
-function porcentaje(p) { return p.alturaMetros > 0 ? Math.min(Math.round(actual(p).nivelCaudalCm / (p.alturaMetros * 100) * 100), 100) : 0; }
+function porcentaje(p) { return Number(p.alturaMetros) > 0 ? Math.min(Math.round(actual(p).nivelCaudalCm / (p.alturaMetros * 100) * 100), 100) : null; }
 function escapar(valor) { return String(valor ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
 function renderizar() { renderWidgets(); renderMapa(); renderUsuario(); }
 function vacio(mensaje) { return `<div class="empty-state"><span>⌕</span><p>${mensaje}</p></div>`; }
@@ -183,7 +262,7 @@ function abrirDetalle(id) {
   document.getElementById("detalle-puente").innerHTML = `<button class="back-button" onclick="volverAWidgets()"><span>←</span> Volver a Widgets</button>
     <div class="detail-titlebar"><h1 id="detail-title">Detalles del Puente</h1><span class="status-tag ${c}"><i></i>${escapar(estadoLabel(r.estado))}</span></div>
     <div class="detail-hero ${puente.imagen ? "with-image" : ""}" ${puente.imagen ? `style="--bridge-image:url('${escapar(puente.imagen)}')"` : ""}><div class="detail-hero-shade"></div><div><span class="distance">KM ${escapar(puente.km)}</span><h2>${escapar(puente.nombre)}</h2></div></div>
-    <div class="detail-current"><div><span>ALTURA DE AGUA</span><b>${nivelM}<small> m</small></b></div><div><span>ALTURA DEL PUENTE</span><b>${Number(puente.alturaMetros).toFixed(2)}<small> m</small></b></div><div><span>CAPACIDAD ACTUAL</span><b>${porcentaje(puente)}<small>%</small></b></div></div>
+    <div class="detail-current"><div><span>ALTURA DE AGUA</span><b>${nivelM}<small> m</small></b></div><div><span>ALTURA DEL PUENTE</span><b>${Number(puente.alturaMetros) > 0 ? Number(puente.alturaMetros).toFixed(2) : "Pendiente"}${Number(puente.alturaMetros) > 0 ? "<small> m</small>" : ""}</b></div><div><span>CAPACIDAD ACTUAL</span><b>${porcentaje(puente) ?? "S/D"}${porcentaje(puente) === null ? "" : "<small>%</small>"}</b></div></div>
     ${contenidoDetalle(puente)}`;
   cambiarPagina("detalle");
 }
