@@ -44,7 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const puentePrincipal = listaPuentes.find(p => p.id === "chaclacayo") || listaPuentes[0];
   asignados = leerJSON(STORAGE_KEYS.assigned, puentePrincipal ? [puentePrincipal.id] : []);
   document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => cambiarPagina(btn.dataset.page)));
-  document.getElementById("location-button").addEventListener("click", solicitarUbicacion);
+  const botonUbicacion = document.getElementById("location-button");
+  if (botonUbicacion) botonUbicacion.addEventListener("click", solicitarUbicacion);
   document.getElementById("search-widgets").addEventListener("input", e => { consultaWidget = e.target.value.trim().toLocaleLowerCase("es"); renderWidgets(); });
   document.getElementById("search-maps").addEventListener("input", e => { consultaMapa = e.target.value.trim().toLocaleLowerCase("es"); renderMapa(); });
   const pref = document.getElementById("pref-alerts");
