@@ -4,16 +4,16 @@
 // mapaUrl: pega aquí el enlace manual a Google Maps (o al mapa que uses).
 // Coordenadas tomadas de los enlaces de Google Maps compartidos para cada puente.
 const puentesIniciales = [
-  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", coordenadas: { lat: -12.006677541154438, lon: -76.86724132554801 }, alturaMetros: 18.5, imagen: "./Img/puente-carapongo.png", mapaUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801", historial: [
+  { id: "carapongo", nombre: "Puente Carapongo", km: "14.8", coordenadas: { lat: -12.006677541154438, lon: -76.86724132554801 }, alturaMetros: 18.5, imagen: "./Img/puente-carapongo.png", mapaUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801", mapaEmbedUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801&output=embed", historial: [
     { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 143 },
     { fecha: "2026-09-09 13:10:00", estado: "Abierto", nivelCaudalCm: 139 },
     { fecha: "2026-09-09 10:00:00", estado: "Abierto", nivelCaudalCm: 121 }
   ] },
-  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", coordenadas: { lat: -12.013213147310912, lon: -76.89223339596234 }, alturaMetros: 15.5, imagen: "", mapaUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234", historial: [
+  { id: "losangeles", nombre: "Puente Los Ángeles", km: "18.1", coordenadas: { lat: -12.013213147310912, lon: -76.89223339596234 }, alturaMetros: 15.5, imagen: "", mapaUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234", mapaEmbedUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234&output=embed", historial: [
     { fecha: "2026-09-09 15:25:00", estado: "Alerta", nivelCaudalCm: 1054 },
     { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 920 }
   ] },
-  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", coordenadas: { lat: -11.968437599999998, lon: -76.7459362 }, alturaMetros: 15, imagen: "", mapaUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362", historial: [
+  { id: "chaclacayo", nombre: "Puente Chaclacayo", km: "24.2", coordenadas: { lat: -11.968437599999998, lon: -76.7459362 }, alturaMetros: 15, imagen: "", mapaUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362", mapaEmbedUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362&output=embed", historial: [
     { fecha: "2026-09-09 18:30:00", estado: "Cerrado", nivelCaudalCm: 1498 },
     { fecha: "2026-09-09 17:15:00", estado: "Alerta", nivelCaudalCm: 1453 },
     { fecha: "2026-09-09 14:00:00", estado: "Abierto", nivelCaudalCm: 1210 },
@@ -164,7 +164,8 @@ function renderMapa() {
 function tarjetaMapa(p) {
   const r = actual(p), c = estadoClase(r.estado), image = p.imagen ? `style="--bridge-image:url('${escapar(p.imagen)}')"` : "";
   const url = p.mapaUrl || "";
-  return `<article class="map-card ${c}"><div class="map-preview ${p.imagen ? "has-image" : ""}" ${image}><span class="map-pin">⌖</span><span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span>${url ? `<a class="map-open" href="${escapar(url)}" target="_blank" rel="noopener">↗ Ver en mapa</a>` : `<span class="map-open disabled">Ruta pendiente</span>`}</div><div class="map-card-body"><div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="distance">KM ${escapar(p.km)}</span></div><p class="map-status ${c}">${c === "open" ? "✓ Tránsito vehicular normal" : c === "warning" ? "! Caudal en alerta" : "⚠ Nivel crítico de caudal"}</p></div></article>`;
+  const mapa = p.mapaEmbedUrl ? `<iframe class="map-frame" src="${escapar(p.mapaEmbedUrl)}" title="Mapa de ${escapar(p.nombre)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : `<span class="map-pin">⌖</span>`;
+  return `<article class="map-card ${c}"><div class="map-preview ${p.imagen ? "has-image" : ""}" ${image}>${mapa}<span class="status-tag"><i></i>${escapar(estadoLabel(r.estado))}</span>${url ? `<a class="map-open" href="${escapar(url)}" target="_blank" rel="noopener">⌖ Ver en mapa</a>` : `<span class="map-open disabled">Ruta pendiente</span>`}</div><div class="map-card-body"><div class="bridge-title-row"><h2>${escapar(p.nombre)}</h2><span class="distance">KM ${escapar(p.km)}</span></div><p class="map-status ${c}">${c === "open" ? "✓ Tránsito vehicular normal" : c === "warning" ? "! Caudal en alerta" : "⚠ Nivel crítico de caudal"}</p></div></article>`;
 }
 function renderUsuario() {
   document.getElementById("user-name").textContent = perfilUsuario.nombre;
