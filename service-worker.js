@@ -4,7 +4,7 @@ const APP_FILES = [
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./manifest.webmanifest",
+  "./manifest.json",
   "./apple-touch-icon.png",
   "./Img/app-icon-192.png",
   "./Img/app-icon-512.png",
