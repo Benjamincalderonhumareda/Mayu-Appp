@@ -21,7 +21,7 @@
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#widgets" aria-label="MayuAlert, inicio"><span class="brand-mark">M</span><span><b>MayuAlert</b><small>MONITOREO · RÍMAC</small></span></a>
-      <div class="connection"><i></i><span>Estaciones</span></div>
+      <div class="connection"><i></i><span id="api-status" role="status" aria-live="polite">Conectando API</span></div>
     </header>
 
     <main>
@@ -75,11 +75,11 @@
   </div>
   <div class="dialog-backdrop" id="new-bridge-dialog" aria-hidden="true">
     <form class="new-bridge-form" id="new-bridge-form">
-      <div class="dialog-title"><h2>Registrar puente</h2><button type="button" id="close-new-bridge" aria-label="Cerrar">×</button></div>
+      <div class="dialog-title"><h2>Registrar lectura</h2><button type="button" id="close-new-bridge" aria-label="Cerrar">×</button></div>
       <label>Nombre del puente<input name="nombre" type="text" required maxlength="60" placeholder="Ej. Puente Santa Clara"></label>
-      <div class="dialog-two-col"><label>KM del río<input name="km" type="text" maxlength="12" placeholder="Ej. 20.5"></label><label>Altura del puente (m)<input name="altura" type="number" min="0.1" step="0.01" required placeholder="15.00"></label></div>
-      <div class="dialog-two-col"><label>Nivel de agua (cm)<input name="nivel" type="number" min="0" step="0.1" required placeholder="120"></label><label>Estado<select name="estado"><option>Abierto</option><option>Alerta</option><option>Cerrado</option></select></label></div>
-      <div class="dialog-actions"><button type="button" id="cancel-new-bridge">Cancelar</button><button type="submit">Guardar puente</button></div>
+      <div class="dialog-two-col"><label>KM del río (opcional)<input name="km" type="text" maxlength="12" placeholder="Ej. 20.5"></label><label>Altura del puente (m)<input name="altura" type="number" min="0.1" step="0.01" placeholder="15.00"></label></div>
+      <div class="dialog-two-col"><label>Altura del agua (m)<input name="nivel" type="number" min="0" step="0.01" required placeholder="1.25"></label><label>Estado<select name="estado"><option>Abierto</option><option>Alerta</option><option>Cerrado</option></select></label></div>
+      <div class="dialog-actions"><button type="button" id="cancel-new-bridge">Cancelar</button><button type="submit">Enviar lectura</button></div>
     </form>
   </div>
   <script src="app.js"></script>

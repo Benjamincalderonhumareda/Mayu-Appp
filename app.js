@@ -32,6 +32,7 @@ const perfilUsuario = {
   whatsappMunicipal: "+51 984 210 493"
 };
 let listaPuentes = [];
+let puentesConfigurados = [];
 let filtroWidget = "Todos";
 let filtroMapa = "Todos";
 let consultaWidget = "";
@@ -40,14 +41,14 @@ let asignados = [];
 let ubicacionUsuario = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-  listaPuentes = leerJSON(STORAGE_KEYS.bridges, puentesIniciales);
+  puentesConfigurados = leerJSON(STORAGE_KEYS.bridges, puentesIniciales);
   const imagenesPuentes = {
     carapongo: "./Img/puente carapongo.png",
     losangeles: "./Img/Puente Los Angeles.png",
     chaclacayo: "./Img/Puente Chaclacayo.png"
   };
-  listaPuentes.forEach(p => { if (imagenesPuentes[p.id]) p.imagen = imagenesPuentes[p.id]; });
-  const puentePrincipal = listaPuentes.find(p => p.id === "chaclacayo") || listaPuentes[0];
+  puentesConfigurados.forEach(p => { if (imagenesPuentes[p.id]) p.imagen = imagenesPuentes[p.id]; });
+  const puentePrincipal = puentesConfigurados.find(p => p.id === "chaclacayo") || puentesConfigurados[0];
   asignados = leerJSON(STORAGE_KEYS.assigned, puentePrincipal ? [puentePrincipal.id] : []);
   document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => cambiarPagina(btn.dataset.page)));
   document.getElementById("profile-shortcut").addEventListener("click", () => cambiarPagina("usuario"));
@@ -99,8 +100,11 @@ async function sincronizarAlertas() {
       puentesAPI.get(clave).push(registro);
     });
 
+    const puentesRecibidos = [];
     for (const [clave, filas] of puentesAPI) {
-      let puente = listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave);
+      let puente = listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave)
+        || puentesConfigurados.find(p => normalizarNombrePuente(p.nombre) === clave)
+        || puentesIniciales.find(p => normalizarNombrePuente(p.nombre) === clave);
       if (!puente) {
         puente = {
           id: clave,
@@ -112,13 +116,16 @@ async function sincronizarAlertas() {
           mapaUrl: "",
           historial: []
         };
-        listaPuentes.push(puente);
       }
 
       const altura = filas.map(fila => numeroAPI(fila.altura_puente ?? fila.altura_del_puente)).find(valor => Number.isFinite(valor) && valor > 0);
       if (altura !== undefined) puente.alturaMetros = altura;
       puente.historial = filas.map(convertirLecturaAPI).filter(Boolean).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+      puentesRecibidos.push(puente);
     }
+
+    // Neon es la fuente de verdad de qué puentes aparecen en la app.
+    listaPuentes = puentesRecibidos;
 
     if (estadoApi) {
       estadoApi.textContent = "API conectada";
@@ -222,24 +229,51 @@ function cerrarNuevoPuente() {
   dialogo.classList.remove("open");
   dialogo.setAttribute("aria-hidden", "true");
 }
-function guardarNuevoPuente(event) {
+async function guardarNuevoPuente(event) {
   event.preventDefault();
-  const datos = new FormData(event.currentTarget);
+  const formulario = event.currentTarget;
+  const datos = new FormData(formulario);
   const nombre = String(datos.get("nombre") || "").trim();
-  const idBase = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const id = listaPuentes.some(p => p.id === idBase) ? `${idBase}-${Date.now().toString(36)}` : idBase;
-  const ahora = new Date().toISOString().replace("T", " ").slice(0, 19);
-  listaPuentes.unshift({
-    id, nombre, km: String(datos.get("km") || "—").trim(), coordenadas: { lat: null, lon: null },
-    alturaMetros: Number(datos.get("altura")), imagen: "", mapaUrl: "", historial: [
-      { fecha: ahora, estado: String(datos.get("estado")), nivelCaudalCm: Number(datos.get("nivel")) }
-    ]
-  });
-  guardar(STORAGE_KEYS.bridges, listaPuentes);
-  filtroWidget = "Todos";
-  event.currentTarget.reset();
-  cerrarNuevoPuente();
-  renderizar();
+  const nivelAgua = numeroAPI(datos.get("nivel"));
+  const alturaPuente = numeroAPI(datos.get("altura"));
+  const km = String(datos.get("km") || "").trim();
+  const estado = String(datos.get("estado") || "Abierto");
+  const botonGuardar = formulario.querySelector("button[type='submit']");
+  botonGuardar.disabled = true;
+
+  try {
+    const response = await fetch(`${API_URL}/alertas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        nombre_puente: nombre,
+        altura_agua: nivelAgua,
+        altura_puente: Number.isFinite(alturaPuente) && alturaPuente > 0 ? alturaPuente : null,
+        estado_puente: estado
+      })
+    });
+    const resultado = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(resultado.error || `Error de API: ${response.status}`);
+
+    const clave = normalizarNombrePuente(nombre);
+    let puente = listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave);
+    if (!puente) {
+      puente = { id: clave, nombre, km: "", coordenadas: { lat: null, lon: null }, alturaMetros: null, imagen: "", mapaUrl: "", historial: [] };
+      listaPuentes.push(puente);
+    }
+    if (km) puente.km = km;
+    if (Number.isFinite(alturaPuente) && alturaPuente > 0) puente.alturaMetros = alturaPuente;
+    guardar(STORAGE_KEYS.bridges, listaPuentes);
+
+    filtroWidget = "Todos";
+    formulario.reset();
+    cerrarNuevoPuente();
+    await sincronizarAlertas();
+  } catch (error) {
+    window.alert(`No se pudo registrar la lectura en Mayu API. ${error.message}`);
+  } finally {
+    botonGuardar.disabled = false;
+  }
 }
 function distanciaPuenteKm(p) {
   const lat = Number(p.coordenadas?.lat), lon = Number(p.coordenadas?.lon);
