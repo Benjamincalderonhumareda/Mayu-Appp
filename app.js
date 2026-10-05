@@ -24,8 +24,8 @@ const STORAGE_KEYS = { bridges: "mayu_puentes_data_v2", assigned: "mayu_puentes_
 const API_URL = "https://prueba-de-ti-2.onrender.com";
 // Perfil de muestra basado en la maqueta. Reemplazar con la sesión/API al integrarla.
 const perfilUsuario = {
-  nombre: "Ing. Benjamín Calderón",
-  correo: "b.calderon@indeci-mayu.gob.pe",
+  nombre: "Benjamín Calderón",
+  correo: "b.calderon@gmail.com",
   emergencia: "+51 984 210 493",
   municipalidad: "Municipalidad de Chaclacayo",
   telefonoMunicipal: "(01) 358-2235",
