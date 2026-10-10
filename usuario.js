@@ -1,4 +1,4 @@
-function renderUsuario() {
+function renderUsuario(preservarFormulario = false) {
   const cuenta = obtenerCuentaActiva();
   const auth = document.getElementById("user-auth");
   const contenido = document.getElementById("user-profile-content");
@@ -7,7 +7,7 @@ function renderUsuario() {
     perfilUsuario = null;
     contenido.hidden = true;
     document.getElementById("user-summary").hidden = true;
-    renderFormularioCuenta(auth);
+    if (!preservarFormulario) renderFormularioCuenta(auth);
     return;
   }
 

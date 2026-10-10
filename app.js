@@ -205,7 +205,7 @@ async function sincronizarAlertas() {
       estadoApi.parentElement.classList.add("online");
       estadoApi.parentElement.classList.remove("offline");
     }
-    renderUsuario();
+    renderUsuario(true);
     renderizar();
     const paginaDetalle = document.getElementById("page-detalle");
     if (paginaDetalle.classList.contains("active") && paginaDetalle.dataset.bridgeId) {
