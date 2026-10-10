@@ -20,7 +20,7 @@ function obtenerCuentaActiva() {
 }
 
 function renderFormularioCuenta(auth, mensaje = "") {
-  const registrando = modoCuenta === "registro ";
+  const registrando = modoCuenta === "registro";
   auth.innerHTML = `
     <section class="account-card">
       <h2>${registrando ? "Crear cuenta" : "Iniciar sesión"}</h2>
