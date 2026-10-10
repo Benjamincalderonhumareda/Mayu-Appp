@@ -1,4 +1,4 @@
-const CACHE_NAME = "mayualert-shell-v19";
+const CACHE_NAME = "mayualert-shell-v20";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_FILES = [
   "./widget.js",
   "./mapa.js",
   "./usuario.js",
+  "./push.js",
   "./manifest.webmanifest",
   "./Img/app-icon-512.png",
   "./Img/puente carapongo.png",
@@ -42,4 +43,36 @@ self.addEventListener("fetch", event => {
       return Response.error();
     })
   );
+});
+
+self.addEventListener("push", event => {
+  let datos = {};
+  try { datos = event.data ? event.data.json() : {}; }
+  catch { datos = { body: event.data?.text() || "Hay una actualización en un puente que sigues." }; }
+  const opciones = {
+    body: datos.body || datos.message || "Cambió el estado de un puente que sigues.",
+    icon: "./Img/app-icon-512.png",
+    badge: "./Img/app-icon-512.png",
+    tag: datos.tag || (datos.bridgeId ? `mayualert-${datos.bridgeId}` : undefined),
+    renotify: Boolean(datos.renotify),
+    data: { bridgeId: datos.bridgeId || datos.bridge_id || datos.puenteId || null }
+  };
+  event.waitUntil(self.registration.showNotification(datos.title || "MayuAlert", opciones));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const bridgeId = event.notification.data?.bridgeId;
+  const destino = new URL("./", self.registration.scope);
+  if (bridgeId) destino.searchParams.set("puente", bridgeId);
+  event.waitUntil((async () => {
+    const ventanas = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const ventana of ventanas) {
+      if (new URL(ventana.url).origin === destino.origin) {
+        await ventana.navigate(destino.href);
+        return ventana.focus();
+      }
+    }
+    return self.clients.openWindow(destino.href);
+  })());
 });

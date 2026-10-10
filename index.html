@@ -126,10 +126,11 @@
                 <b>
                   <i>
                   </i>Alertas prioritarias</b>
-                <small>Avisos críticos por desborde y riesgo estructural</small>
+                <small>Avisos cuando un puente seguido pasa a Alerta o Cerrado</small>
               </span>
               <input type="checkbox" id="pref-alerts" class="toggle">
             </label>
+            <p id="push-status" class="muted" role="status" aria-live="polite">Las notificaciones push no están configuradas.</p>
             <div class="choose-bridge-title">
               <span>
                 <span class="material-symbols-outlined">tune</span> PUENTE MONITOREADO</span>
@@ -200,6 +201,8 @@
     <script src="mapa.js">
     </script>
     <script src="usuario.js">
+    </script>
+    <script src="push.js">
     </script>
     <script>
       if ("serviceWorker" in navigator) {

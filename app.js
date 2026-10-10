@@ -125,9 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMapa();
     mapSearchInput.focus();
   });
-  const pref = document.getElementById("pref-alerts");
-  pref.checked = localStorage.getItem(STORAGE_KEYS.alerts) !== "false";
-  pref.addEventListener("change", () => localStorage.setItem(STORAGE_KEYS.alerts, pref.checked));
+  inicializarNotificacionesPush();
   inicializarCuentaUsuario();
   renderUsuario();
   renderizar();
@@ -210,6 +208,11 @@ async function sincronizarAlertas() {
     const paginaDetalle = document.getElementById("page-detalle");
     if (paginaDetalle.classList.contains("active") && paginaDetalle.dataset.bridgeId) {
       abrirDetalle(paginaDetalle.dataset.bridgeId, false);
+    }
+    const puenteNotificado = new URLSearchParams(window.location.search).get("puente");
+    if (puenteNotificado) {
+      abrirDetalle(puenteNotificado);
+      history.replaceState(null, "", window.location.pathname);
     }
   } catch (error) {
     if (estadoApi) {
