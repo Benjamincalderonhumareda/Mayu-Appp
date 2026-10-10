@@ -1,97 +1,212 @@
-----<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101318">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="MayuAlert">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="icon" type="image/png" href="./Img/app-icon-512.png">
-  <link rel="apple-touch-icon" href="./Img/app-icon-512.png">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <title>MayuAlert · Monitoreo de puentes</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&amp;display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="#widgets" aria-label="MayuAlert, inicio"><span class="brand-mark">M</span><span><b>MayuAlert</b><small>MONITOREO · RÍMAC</small></span></a>
-      <div class="connection"><i></i><span id="api-status" role="status" aria-live="polite">Conectando API</span></div>
-    </header>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101318">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="MayuAlert">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="./Img/app-icon-512.png">
+    <link rel="apple-touch-icon" href="./Img/app-icon-512.png">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <title>MayuAlert · Monitoreo de puentes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+      <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#widgets" aria-label="MayuAlert, inicio">
+          <span class="brand-mark">M</span>
+          <span>
+            <b>MayuAlert</b>
+            <small>MONITOREO · RÍMAC</small>
+          </span>
+        </a>
+        <div class="connection">
+          <i>
+          </i>
+          <span id="api-status" role="status" aria-live="polite">Conectando API</span>
+        </div>
+      </header>
 
-    <main>
-      <section class="page active" id="page-widgets" aria-labelledby="heading-widgets">
-        <div class="widget-topbar"><h1 id="heading-widgets">Estado General de Puentes</h1><div class="widget-actions"><button class="new-bridge-button" id="new-bridge-button" type="button"><span>＋</span> Nuevo</button><button class="profile-shortcut" id="profile-shortcut" type="button" aria-label="Abrir perfil de usuario"><span class="material-symbols-outlined">person</span></button></div></div>
-        <div class="widget-search-row"><label class="search"><span>⌕</span><input id="search-widgets" type="search" placeholder="Buscar puente por nombre o sector…" aria-label="Buscar puentes"></label><button class="location-button" id="location-button" type="button" aria-label="Usar mi ubicación" title="Calcular distancia desde mi ubicación"><span class="material-symbols-outlined">my_location</span></button></div>
-        <span class="location-status" id="location-label" role="status" aria-live="polite"></span>
-        <div class="summary" id="status-summary"></div>
-        <div id="puentes-container" class="bridge-list"></div>
-      </section>
-
-      <section class="page" id="page-mapa" aria-labelledby="heading-mapa">
-        <div class="page-heading"><div><p class="eyebrow">UBICACIONES</p><h1 id="heading-mapa">Mapa de puentes</h1></div><span class="heading-icon">⌖</span></div>
-        <div class="map-search-row"><label class="search"><span>⌕</span><input id="search-maps" type="search" placeholder="Buscar puente en mapa…" aria-label="Buscar en mapas"><button id="clear-map-search" class="clear-map-search" type="button" aria-label="Limpiar búsqueda">×</button></label></div>
-        <div id="map-filters" class="filter-row" aria-label="Filtrar puentes en el mapa"></div>
-        <div id="map-container" class="bridge-list"></div>
-        <div class="map-footnote"><i></i><span id="map-count"></span><span class="separator">·</span> Ubicaciones configuradas manualmente</div>
-      </section>
-
-      <section class="page detail-page" id="page-detalle" aria-labelledby="detail-title">
-        <div id="detalle-puente"></div>
-      </section>
-
-      <section class="page" id="page-usuario" aria-labelledby="heading-usuario">
-        <div class="user-page-heading"><div><h1 id="heading-usuario">Perfil de Usuario</h1></div></div>
-        <article class="profile-card">
-          <div class="profile-top"><div class="profile-avatar"><span class="material-symbols-outlined">shield_person</span><i></i></div><div class="profile-main"><h2 id="user-name"></h2><div class="user-badges"><span class="operator-badge"><i></i>OPERADOR ACTIVO</span></div></div></div>
-          <div class="profile-contact"><span class="material-symbols-outlined">mail</span><b id="user-email"></b><span class="official-badge">OFICIAL</span></div>
-          <div class="profile-contact"><span class="material-symbols-outlined">phone_in_talk</span><b>NUMERO:</b><a id="user-emergency"></a></div>
-        </article>
-        <section class="settings-card user-alert-settings">
-          <div class="section-title"><h2><span class="user-section-icon"><span class="material-symbols-outlined">notifications_active</span></span> RECIBIR NOTIFICACIONES</h2><span class="alert-frequency">ALERTAS 24/7</span></div>
-          <label class="priority-alert"><span><b><i></i>Alertas prioritarias</b><small>Avisos críticos por desborde y riesgo estructural</small></span><input type="checkbox" id="pref-alerts" class="toggle"></label>
-          <div class="choose-bridge-title"><span><span class="material-symbols-outlined">tune</span> PUENTE MONITOREADO</span><b id="assigned-count"></b></div>
-          <div id="assigned-bridges" class="assigned-list"></div>
+      <main>
+        <section class="page active" id="page-widgets" aria-labelledby="heading-widgets">
+          <div class="widget-topbar">
+            <h1 id="heading-widgets">Estado General de Puentes</h1>
+            <div class="widget-actions">
+              <button class="profile-shortcut" id="profile-shortcut" type="button" aria-label="Abrir perfil de usuario">
+                <span class="material-symbols-outlined">person</span>
+              </button>
+            </div>
+          </div>
+          <div class="widget-search-row">
+            <label class="search">
+              <span>⌕</span>
+              <input id="search-widgets" type="search" placeholder="Buscar puente por nombre o sector…" aria-label="Buscar puentes">
+            </label>
+            <button class="location-button" id="location-button" type="button" aria-label="Usar mi ubicación" title="Calcular distancia desde mi ubicación">
+              <span class="material-symbols-outlined">my_location</span>
+            </button>
+          </div>
+          <span class="location-status" id="location-label" role="status" aria-live="polite">
+          </span>
+          <div class="summary" id="status-summary">
+          </div>
+          <div id="puentes-container" class="bridge-list">
+          </div>
         </section>
-        <section class="settings-card municipal-card">
-          <div class="section-title"><h2><span class="user-section-icon emergency-icon"><span class="material-symbols-outlined">emergency</span></span> MUNICIPALIDAD DE CONTACTO</h2><span class="direct-link">ENLACE 24/7</span></div>
-          <div class="municipality-info"><div class="municipality-heading"><span class="municipality-icon"><span class="material-symbols-outlined">location_city</span></span><div><b id="municipality-name"></b><small>Central de Emergencias y Defensa Civil</small></div></div><div class="municipality-numbers"><span>CENTRAL TELEFÓNICA<b id="municipality-phone"></b></span><span>WHATSAPP EMERGENCIAS<a id="municipality-whatsapp"></a></span></div></div>
-          <a class="emergency-call" id="emergency-call"><span class="material-symbols-outlined">call</span> LLAMAR CENTRAL DE EMERGENCIA</a>
-        </section>
-        <button class="signout-button" type="button" title="La sesión se conectará al iniciar la autenticación"><span class="material-symbols-outlined">power_settings_new</span> CERRAR SESIÓN</button>
-      </section>
-    </main>
 
-    <nav class="bottom-nav" aria-label="Navegación principal">
-      <button class="nav-item active" data-page="widgets"><span>▦</span><small>Widgets</small></button>
-      <button class="nav-item" data-page="mapa"><span>⌖</span><small>Mapa</small></button>
-      <button class="nav-item" data-page="usuario"><span>♙</span><small>Usuario</small></button>
-    </nav>
-  </div>
-  <div class="dialog-backdrop" id="new-bridge-dialog" aria-hidden="true">
-    <form class="new-bridge-form" id="new-bridge-form">
-      <div class="dialog-title"><h2>Registrar lectura</h2><button type="button" id="close-new-bridge" aria-label="Cerrar">×</button></div>
-      <label>Nombre del puente<input name="nombre" type="text" required maxlength="60" placeholder="Ej. Puente Santa Clara"></label>
-      <div class="dialog-two-col"><label>KM del río (opcional)<input name="km" type="text" maxlength="12" placeholder="Ej. 20.5"></label><label>Altura del puente (m)<input name="altura" type="number" min="0.1" step="0.01" placeholder="15.00"></label></div>
-      <div class="dialog-two-col"><label>Altura del agua (m)<input name="nivel" type="number" min="0" step="0.01" required placeholder="1.25"></label><label>Estado<select name="estado"><option>Abierto</option><option>Alerta</option><option>Cerrado</option></select></label></div>
-      <div class="dialog-actions"><button type="button" id="cancel-new-bridge">Cancelar</button><button type="submit">Enviar lectura</button></div>
-    </form>
-  </div>
-  <script src="app.js"></script>
-  <script src="widget.js"></script>
-  <script src="mapa.js"></script>
-  <script src="usuario.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
+        <section class="page" id="page-mapa" aria-labelledby="heading-mapa">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">UBICACIONES</p>
+              <h1 id="heading-mapa">Mapa de puentes</h1>
+            </div>
+            <span class="heading-icon">⌖</span>
+          </div>
+          <div class="map-search-row">
+            <label class="search">
+              <span>⌕</span>
+              <input id="search-maps" type="search" placeholder="Buscar puente en mapa…" aria-label="Buscar en mapas">
+              <button id="clear-map-search" class="clear-map-search" type="button" aria-label="Limpiar búsqueda">×</button>
+            </label>
+          </div>
+          <div id="map-filters" class="filter-row" aria-label="Filtrar puentes en el mapa">
+          </div>
+          <div id="map-container" class="bridge-list">
+          </div>
+          <div class="map-footnote">
+            <i>
+            </i>
+            <span id="map-count">
+            </span>
+            <span class="separator">·</span> Ubicaciones configuradas manualmente</div>
+        </section>
+
+        <section class="page detail-page" id="page-detalle" aria-labelledby="detail-title">
+          <div id="detalle-puente">
+          </div>
+        </section>
+
+        <section class="page" id="page-usuario" aria-labelledby="heading-usuario">
+          <div class="user-page-heading">
+            <div>
+              <h1 id="heading-usuario">Mi cuenta</h1>
+            </div>
+            <article class="profile-card" id="user-summary" hidden>
+              <div class="profile-layout">
+                <div class="profile-avatar">
+                  <span class="material-symbols-outlined">shield_person</span>
+                  <i></i>
+                </div>
+                <div class="profile-details">
+                  <div class="profile-main">
+                    <h2 id="user-name"></h2>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+          <div id="user-auth"></div>
+          <div id="user-profile-content" hidden>
+          <section class="settings-card user-alert-settings">
+            <div class="section-title">
+              <h2>
+                <span class="user-section-icon">
+                  <span class="material-symbols-outlined">notifications_active</span>
+                </span> RECIBIR NOTIFICACIONES</h2>
+              <span class="alert-frequency">ALERTAS 24/7</span>
+            </div>
+            <label class="priority-alert">
+              <span>
+                <b>
+                  <i>
+                  </i>Alertas prioritarias</b>
+                <small>Avisos críticos por desborde y riesgo estructural</small>
+              </span>
+              <input type="checkbox" id="pref-alerts" class="toggle">
+            </label>
+            <div class="choose-bridge-title">
+              <span>
+                <span class="material-symbols-outlined">tune</span> PUENTE MONITOREADO</span>
+              <b id="assigned-count">
+              </b>
+            </div>
+            <div id="assigned-bridges" class="assigned-list">
+            </div>
+          </section>
+          <section class="settings-card municipal-card">
+            <div class="section-title">
+              <h2>
+                <span class="user-section-icon emergency-icon">
+                  <span class="material-symbols-outlined">emergency</span>
+                </span> MUNICIPALIDAD DE CONTACTO</h2>
+              <span class="direct-link">ENLACE 24/7</span>
+            </div>
+            <p class="municipality-choice-hint">Elige la municipalidad más cercana a tu zona.</p>
+            <div id="municipality-options" class="municipality-options" role="radiogroup" aria-label="Selecciona tu municipalidad"></div>
+            <div class="municipality-info">
+              <div class="municipality-heading">
+                <span class="municipality-icon">
+                  <span class="material-symbols-outlined">location_city</span>
+                </span>
+                <div>
+                  <b id="municipality-name">
+                  </b>
+                  <small>Central de Emergencias y Defensa Civil</small>
+                </div>
+              </div>
+              <div class="municipality-numbers">
+                <span>SERENAZGO / EMERGENCIAS<b id="municipality-phone">
+                  </b>
+                </span>
+                <span>FUENTE OFICIAL<a id="municipality-source" target="_blank" rel="noopener">Ver contacto</a></span>
+              </div>
+            </div>
+            <a class="emergency-call" id="emergency-call">
+              <span class="material-symbols-outlined">call</span> LLAMAR CENTRAL DE EMERGENCIA</a>
+          </section>
+          <button class="signout-button" id="signout-button" type="button">
+            <span class="material-symbols-outlined">power_settings_new</span> CERRAR SESIÓN</button>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Navegación principal">
+        <button class="nav-item active" data-page="widgets">
+          <span>▦</span>
+          <small>Widgets</small>
+        </button>
+        <button class="nav-item" data-page="mapa">
+          <span>🗺️</span>
+          <small>Mapa</small>
+        </button>
+        <button class="nav-item" data-page="usuario">
+          <span>👤</span>
+          <small>Usuario</small>
+        </button>
+      </nav>
+    </div>
+    <script src="app.js">
+    </script>
+    <script src="cuentas.js">
+    </script>
+    <script src="widget.js">
+    </script>
+    <script src="mapa.js">
+    </script>
+    <script src="usuario.js">
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch(error => console.error("No se pudo activar el modo app:", error));
+      navigator.serviceWorker.register("./service-worker.js").catch(error => console.error("No se pudo activar el modo app:", error));
       });
-    }
-  </script>
-</body>
+      }
+    </script>
+  </body>
 </html>

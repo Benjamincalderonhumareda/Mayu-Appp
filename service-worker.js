@@ -1,9 +1,10 @@
-const CACHE_NAME = "mayualert-shell-v8";
+const CACHE_NAME = "mayualert-shell-v17";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./cuentas.js",
   "./widget.js",
   "./mapa.js",
   "./usuario.js",
