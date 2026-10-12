@@ -194,14 +194,20 @@ function cambiarPagina(id) {
 function conteosEstado() {
   return listaPuentes.reduce((acc, p) => { acc[estadoClase(actual(p).estado)]++; return acc; }, { open: 0, warning: 0, closed: 0 });
 }
-function construirFiltros(targetId, selected, handler) {
+function renderResumenEstados(targetId, selected, handler) {
   const counts = conteosEstado();
-  const opciones = [["Todos", listaPuentes.length], ["Cerrado", counts.closed], ["Alerta", counts.warning], ["Abierto", counts.open]];
-  document.getElementById(targetId).innerHTML = opciones.map(([label, count]) => `<button class="filter-chip ${selected === label ? "selected" : ""}" data-filter="${label}">
-    <span class="dot ${label === "Todos" ? "all" : estadoClase(label)}">
-    </span>${label}<b>${count}</b>
+  const estados = [
+    { filtro: "Abierto", clase: "open", label: "Abierto", total: counts.open },
+    { filtro: "Alerta", clase: "warning", label: "Alerta", total: counts.warning },
+    { filtro: "Cerrado", clase: "closed", label: "Crítico", total: counts.closed }
+  ];
+  const resumen = document.getElementById(targetId);
+  resumen.innerHTML = estados.map(item => `<button class="summary-chip ${item.clase} ${selected === item.filtro ? "selected" : ""}" type="button" data-filter="${item.filtro}" aria-pressed="${selected === item.filtro}">
+    <i></i><b>${item.total}</b><span>${item.label}</span>
     </button>`).join("");
-  document.getElementById(targetId).querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => handler(btn.dataset.filter)));
+  resumen.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => {
+    handler(selected === btn.dataset.filter ? "Todos" : btn.dataset.filter);
+  }));
 }
 function solicitarUbicacion() {
   const boton = document.getElementById("location-button");

@@ -1,21 +1,6 @@
 // Widgets: resumen, búsqueda y tarjetas de puentes.
 function renderWidgets() {
-  const counts = conteosEstado();
-  const estados = [
-    { filtro: "Abierto", clase: "open", label: "Abierto", total: counts.open },
-    { filtro: "Alerta", clase: "warning", label: "Alerta", total: counts.warning },
-    { filtro: "Cerrado", clase: "closed", label: "Crítico", total: counts.closed }
-  ];
-  const resumen = document.getElementById("status-summary");
-  resumen.innerHTML = estados.map(item => `<button class="summary-chip ${item.clase} ${filtroWidget === item.filtro ? "selected" : ""}" type="button" data-filter="${item.filtro}" aria-pressed="${filtroWidget === item.filtro}">
-    <i>
-    </i>
-    <b>${item.total}</b>
-    <span>${item.label}</span>
-    </button>`).join("");
-  resumen.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => { filtroWidget = filtroWidget === btn.dataset.filter ? "Todos" : btn.dataset.filter;
-    renderWidgets();
-    }));
+  renderResumenEstados("status-summary", filtroWidget, v => { filtroWidget = v; renderWidgets(); });
   const items = listaPuentes.filter(p => coincide(p, consultaWidget) && coincideFiltro(p, filtroWidget));
   document.getElementById("puentes-container").innerHTML = items.length ? items.map(tarjetaWidget).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
 }

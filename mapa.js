@@ -1,6 +1,6 @@
 // Mapa: filtros, búsqueda y tarjetas de ubicación.
 function renderMapa() {
-  construirFiltros("map-filters", filtroMapa, v => { filtroMapa = v; renderMapa(); });
+  renderResumenEstados("map-filters", filtroMapa, v => { filtroMapa = v; renderMapa(); });
   const items = listaPuentes.filter(p => coincide(p, consultaMapa) && coincideFiltro(p, filtroMapa));
   document.getElementById("map-container").innerHTML = items.length ? items.map(tarjetaMapa).join("") : vacio("No hay puentes que coincidan con la búsqueda.");
   document.getElementById("map-count").textContent = `${items.length} ${items.length === 1 ? "estación" : "estaciones"}`;

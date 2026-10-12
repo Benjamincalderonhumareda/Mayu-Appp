@@ -158,60 +158,7 @@ body {
   height:6px;
   border-radius:50%;
   margin-right:4px;
-  background:var(--green)
-}
-.warning .status-tag i {
-  background:var(--amber)
-}
-.closed .status-tag i {
-  background:var(--red)
-}
-.filter-row {
-  display:flex;
-  gap:7px;
-  overflow-x:auto;
-  padding:1px 0 12px;
-  scrollbar-width:none
-}
-.filter-row::-webkit-scrollbar {
-  display:none
-}
-.filter-chip {
-  white-space:nowrap;
-  display:flex;
-  align-items:center;
-  gap:5px;
-  padding:6px 9px;
-  border-radius:99px;
-  border:1px solid #2b303a;
-  background:#191d25;
-  color:#aeb7c4;
-  font:9px 'DM Mono',monospace;
-  cursor:pointer
-}
-.filter-chip b {
-  font-weight:500;
-  color:#f6f8fa
-}
-.filter-chip.selected {
-  background:#102d35;
-  border-color:#145469;
-  color:#56def2
-}
-.filter-chip .dot {
-  height:6px;
-  width:6px;
-  border-radius:50%;
-  background:var(--green)
-}
-.filter-chip .dot.warning {
-  background:var(--amber)
-}
-.filter-chip .dot.closed {
-  background:var(--red)
-}
-.filter-chip .dot.all {
-  background:var(--cyan)
+  background:var(--accent,var(--green))
 }
 .bridge-list {
   display:grid;
@@ -225,9 +172,9 @@ body {
   border-radius:17px;
   padding:12px 13px
 }
-.bridge-card.open {
+.bridge-card.open,.map-card.open {
   --accent:var(--green);
-  border-color:#12664f
+  border-color:#098262
 }
 .bridge-card.warning,.map-card.warning {
   --accent:var(--amber);
@@ -338,8 +285,6 @@ body {
   display:grid;
   place-items:center;
   border-radius:8px;
-  background:#102e38;
-  color:var(--cyan);
   font-size:17px
 }
 .detail-heading b,.detail-heading small {
@@ -360,9 +305,7 @@ body {
   display:block;
   width:100%;
   height:78px;
-  color:var(--cyan);
-  background:linear-gradient(0deg,#18c9e81a,transparent);
-  border-bottom:1px solid #34404c
+  border-bottom:1px solid
 }
 .chart-labels {
   display:flex;
@@ -372,7 +315,6 @@ body {
   font:8px 'DM Mono',monospace
 }
 .chart-labels b {
-  color:#dce4ec;
   font-weight:500
 }
 .history-list {
@@ -735,15 +677,6 @@ body {
   font-size:17px;
   margin:0
 }
-.detail-titlebar .status-tag {
-  --accent:var(--green)
-}
-.detail-titlebar .status-tag.warning {
-  --accent:var(--amber)
-}
-.detail-titlebar .status-tag.closed {
-  --accent:var(--red)
-}
 .detail-hero {
   height:185px;
   position:relative;
@@ -794,8 +727,7 @@ body {
 .detail-current b {
   display:block;
   margin-top:4px;
-  font:600 15px 'DM Mono',monospace;
-  color:var(--cyan)
+  font:600 15px 'DM Mono',monospace
 }
 .detail-current small {
   font-size:13px;
@@ -1078,10 +1010,6 @@ body {
 }
 .search input {
   font-size:13px
-}
-.filter-chip {
-  font-size:10px;
-  padding:7px 10px
 }
 .bridge-card {
   padding:0;
@@ -1533,14 +1461,6 @@ body {
 .search input {
     font-size:15px
   }
-.filter-row {
-    gap:8px;
-    padding-bottom:14px
-  }
-.filter-chip {
-    padding:8px 11px;
-    font-size:11px
-  }
 .bridge-list {
     gap:14px
   }
@@ -1634,82 +1554,6 @@ body {
 .clear-map-search.visible {
   display:block
 }
-#map-filters {
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:7px;
-  padding:0 0 15px;
-  overflow:visible
-}
-#map-filters::-webkit-scrollbar {
-  display:none
-}
-#map-filters .filter-chip {
-  min-width:0;
-  min-height:47px;
-  display:flex;
-  justify-content:center;
-  gap:6px;
-  padding:0 7px;
-  border:0;
-  border-radius:99px;
-  background:#282b30;
-  color:#e9edf4;
-  font-size:clamp(9px,2.6vw,12px);
-  font-weight:700;
-  letter-spacing:.035em;
-  text-transform:uppercase;
-  white-space:nowrap
-}
-#map-filters .filter-chip .dot {
-  width:10px;
-  height:10px;
-  box-shadow:0 0 8px currentColor
-}
-#map-filters .filter-chip .dot.all {
-  background:#11c9e9;
-  color:#11c9e9
-}
-#map-filters .filter-chip .dot.closed {
-  background:#ff5258;
-  color:#ff5258
-}
-#map-filters .filter-chip .dot.warning {
-  background:#ffad16;
-  color:#ffad16
-}
-#map-filters .filter-chip .dot.open {
-  background:#10c997;
-  color:#10c997
-}
-#map-filters .filter-chip b {
-  min-width:20px;
-  height:20px;
-  display:grid;
-  place-items:center;
-  padding:0 4px;
-  border-radius:99px;
-  background:#41454b;
-  color:#fff;
-  font-size:12px
-}
-#map-filters .filter-chip[data-filter="Cerrado"] b {
-  background:#9e1119
-}
-#map-filters .filter-chip[data-filter="Alerta"] b {
-  background:#a96700
-}
-#map-filters .filter-chip[data-filter="Abierto"] b {
-  background:#087a5c
-}
-#map-filters .filter-chip.selected {
-  background:#08c8e9;
-  color:#06202a
-}
-#map-filters .filter-chip.selected b {
-  background:#009fbd;
-  color:#06202a
-}
 .map-card {
   padding:0;
   background:#151b24;
@@ -1790,26 +1634,6 @@ body {
 .map-search-row .search input {
     font-size:16px
   }
-#map-filters {
-    gap:5px
-  }
-#map-filters .filter-chip {
-    min-height:45px;
-    gap:4px;
-    padding:0 4px;
-    font-size:clamp(8px,2.35vw,11px);
-    letter-spacing:0
-  }
-#map-filters .filter-chip .dot {
-    width:8px;
-    height:8px
-  }
-#map-filters .filter-chip b {
-    min-width:18px;
-    height:18px;
-    padding:0 3px;
-    font-size:10px
-  }
 /* Ajustes móviles para encabezados, detalles y perfil */
   body {
     font-size:16px;
@@ -1833,13 +1657,6 @@ body {
   }
 .page-heading h1 {
     font-size:29px
-  }
-.filter-chip {
-    font-size:12px;
-    padding:9px 12px
-  }
-.filter-chip b {
-    font-size:11px
   }
 .bridge-status-head {
     min-height:70px
@@ -1963,17 +1780,6 @@ body {
 }
 /* #endregion */
 /* #region 09 - ENCABEZADO Y FILTROS DE PUENTES ========================= */
-#page-widgets .filter-row {
-  gap:8px;
-  padding-bottom:12px
-}
-#page-widgets .filter-chip {
-  font-size:13px;
-  padding:9px 12px
-}
-#page-widgets .filter-chip b {
-  font-size:12px
-}
 #page-widgets .page-heading {
   margin-bottom:16px
 }
@@ -2060,7 +1866,7 @@ body {
   cursor:pointer;
   transition:transform .15s,filter .15s
 }
-#status-summary {
+.summary {
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:10px;
@@ -2398,8 +2204,7 @@ body {
   color:#a8b3c1
 }
 .detail-current b {
-  font-size:20px;
-  color:#18c9e8
+  font-size:20px
 }
 .chart-card,.history-card {
   background:#191e27;
@@ -2413,21 +2218,11 @@ body {
 .detail-heading small {
   font-size:12px
 }
-.detail-heading>span {
-  color:#16d1f5;
-  background:#102d38
-}
 .history-chart {
-  height:94px;
-  color:#11d3f5;
-  border-bottom-color:#344350;
-  background:linear-gradient(0deg,#10c9e826,transparent)
+  height:94px
 }
 .chart-labels {
   font-size:11px
-}
-.chart-labels b {
-  color:#18d7f4
 }
 .history-list {
   gap:11px;
