@@ -34,14 +34,20 @@ function mostrarEstadoPush(mensaje) {
   if (estado) estado.textContent = mensaje;
 }
 
-function validarSoportePush() {
-  if (!window.isSecureContext) throw new Error("Las notificaciones requieren HTTPS.");
+function problemaSoportePush() {
+  if (!window.isSecureContext) return "Las notificaciones requieren HTTPS.";
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-    throw new Error("Este navegador no admite notificaciones push.");
+    return "Este navegador no admite notificaciones push.";
   }
   if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.matchMedia("(display-mode: standalone)").matches && !navigator.standalone) {
-    throw new Error("En iPhone, instala MayuAlert en la pantalla de inicio y ábrela desde su icono.");
+    return "En iPhone, instala MayuAlert en la pantalla de inicio y ábrela desde su icono.";
   }
+  return "";
+}
+
+function validarSoportePush() {
+  const problema = problemaSoportePush();
+  if (problema) throw new Error(problema);
 }
 
 async function obtenerClavePublicaPush() {
@@ -71,8 +77,7 @@ async function activarNotificacionesPush() {
   const permiso = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permiso !== "granted") throw new Error("No se concedió permiso para mostrar notificaciones.");
 
-  pushRegistration = await navigator.serviceWorker.ready;
-  let suscripcion = await pushRegistration.pushManager.getSubscription();
+  let suscripcion = await obtenerSuscripcionPush();
   if (!suscripcion) {
     mostrarEstadoPush("Creando suscripción segura…");
     const clave = await obtenerClavePublicaPush();
@@ -82,7 +87,7 @@ async function activarNotificacionesPush() {
     });
   }
   await guardarSuscripcionPush(suscripcion);
-  mostrarEstadoPush("Notificaciones activas para los puentes seleccionados.");
+  mostrarEstadoPush("Suscripción registrada en Mayu API para los puentes seleccionados.");
 }
 
 async function guardarSuscripcionPush(suscripcion) {
@@ -111,8 +116,9 @@ async function desactivarNotificacionesPush() {
 }
 
 async function comprobarEstadoPush() {
-  if (!window.isSecureContext || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-    mostrarEstadoPush("Este navegador no admite notificaciones push.");
+  const problema = problemaSoportePush();
+  if (problema) {
+    mostrarEstadoPush(problema);
     return;
   }
   if (Notification.permission === "denied") {
@@ -120,7 +126,9 @@ async function comprobarEstadoPush() {
     return;
   }
   const suscripcion = await obtenerSuscripcionPush();
-  mostrarEstadoPush(suscripcion ? "Notificaciones activas en este dispositivo." : "Activa el control para configurar las notificaciones.");
+  mostrarEstadoPush(suscripcion
+    ? "Hay una suscripción local en este dispositivo; la entrega depende de Mayu API."
+    : "Activa el control para configurar las notificaciones.");
 }
 
 function sincronizarPuentesPush() {
