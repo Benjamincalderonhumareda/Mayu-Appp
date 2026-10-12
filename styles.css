@@ -798,7 +798,7 @@ body {
   color:var(--cyan)
 }
 .detail-current small {
-  font-size:16px;
+  font-size:13px;
   color:#9da8b6
 }
 .detail-page .chart-card,.detail-page .history-card {
@@ -2394,11 +2394,11 @@ body {
   border-color:#303846
 }
 .detail-current span {
-  font-size:10px;
+  font-size:9px;
   color:#a8b3c1
 }
 .detail-current b {
-  font-size:24px;
+  font-size:20px;
   color:#18c9e8
 }
 .chart-card,.history-card {
