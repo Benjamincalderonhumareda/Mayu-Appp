@@ -11,13 +11,8 @@ const puentesIniciales = [
     lon: -76.86724132554801 },
     alturaMetros: 18.5,
     imagen: "./Img/puente carapongo.png",
-    mapaUrl: "https://maps.app.goo.gl/SgbUPj8WyLoc5aTB7",
-    mapaEmbedUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801&output=embed",
-    historial: [
-    { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 143 },
-    { fecha: "2026-09-09 13:10:00", estado: "Abierto", nivelCaudalCm: 139 },
-    { fecha: "2026-09-09 10:00:00", estado: "Abierto", nivelCaudalCm: 121 }
-  ] },
+    mapaUrl: "https://maps.app.goo.gl/SgbUPj8WyLoc5aTB7"
+  },
   { id: "losangeles",
     nombre: "Puente Los Ángeles",
     km: "18.1",
@@ -25,26 +20,16 @@ const puentesIniciales = [
     lon: -76.89223339596234 },
     alturaMetros: 15.5,
     imagen: "./Img/Puente Los Angeles.png",
-    mapaUrl: "https://maps.app.goo.gl/gkXXKvpX5VqrhT4RA",
-    mapaEmbedUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234&output=embed",
-    historial: [
-    { fecha: "2026-09-09 15:25:00", estado: "Alerta", nivelCaudalCm: 1054 },
-    { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 920 }
-  ] },
+    mapaUrl: "https://maps.app.goo.gl/gkXXKvpX5VqrhT4RA"
+  },
   { id: "ñaña",
     nombre: "Puente Ñaña",
     km: "24.2",
     coordenadas: { lat: -11.968437599999998, lon: -76.7459362 },
     alturaMetros: 15,
     imagen: "./Img/Puente Ñaña.png",
-    mapaUrl: "https://maps.app.goo.gl/SbvdRWx8uRyhVJop9",
-    mapaEmbedUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362&output=embed",
-    historial: [
-    { fecha: "2026-09-09 18:30:00", estado: "Cerrado", nivelCaudalCm: 1498 },
-    { fecha: "2026-09-09 17:15:00", estado: "Alerta", nivelCaudalCm: 1453 },
-    { fecha: "2026-09-09 14:00:00", estado: "Abierto", nivelCaudalCm: 1210 },
-    { fecha: "2026-09-09 08:30:00", estado: "Abierto", nivelCaudalCm: 1085 }
-  ] }
+    mapaUrl: "https://maps.app.goo.gl/SbvdRWx8uRyhVJop9"
+  }
 ];
 const STORAGE_KEYS = {
   bridges: "mayu_puentes_data_v2",
@@ -52,7 +37,6 @@ const STORAGE_KEYS = {
   alerts: "mayu_pref_alertas",
   municipality: "mayu_municipality"
 };
-const API_URL = "https://prueba-de-ti-2.onrender.com";
 const MUNICIPALIDADES = [
   {
     id: "lurigancho-chosica",
@@ -132,64 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
 async function sincronizarAlertas() {
   const estadoApi = document.getElementById("api-status");
   try {
-    const [actualResult, historialResult] = await Promise.allSettled([
-      fetch(`${API_URL}/alertas`, { cache: "no-store", headers: { Accept: "application/json" } }),
-      fetch(`${API_URL}/alertas/historial`, { cache: "no-store", headers: { Accept: "application/json" } })
-    ]);
-    if (actualResult.status === "rejected") throw actualResult.reason;
-    if (!actualResult.value.ok) throw new Error(`GET /alertas: HTTP ${actualResult.value.status}`);
-
-    const lecturasActuales = await actualResult.value.json();
-    if (!Array.isArray(lecturasActuales)) throw new Error("GET /alertas no devolvió una lista");
-
-    let transiciones = [];
-    if (historialResult.status === "fulfilled" && historialResult.value.ok) {
-      const payload = await historialResult.value.json();
-      transiciones = Array.isArray(payload) ? payload : payload.historial || payload.data || [];
-      if (!Array.isArray(transiciones)) transiciones = [];
-    } else {
-      console.warn("No se pudo cargar el historial de estados; se mostrarán las lecturas actuales.");
-    }
-
-    const historialPorPuente = new Map();
-    transiciones.forEach(evento => {
-      const clave = normalizarNombrePuente(evento.nombre_puente);
-      if (!clave) return;
-      if (!historialPorPuente.has(clave)) historialPorPuente.set(clave, []);
-      const item = convertirTransicionAPI(evento);
-      if (item) historialPorPuente.get(clave).push(item);
+    const puentesRecibidos = await obtenerPuentesAPI({
+      puentesIniciales,
+      puentesConfigurados,
+      listaPuentes,
+      imagenesPuentes: IMAGENES_PUENTES
     });
-
-    const puentesRecibidos = [];
-    for (const lectura of lecturasActuales) {
-      const nombre = String(lectura.nombre_puente || "").trim();
-      const clave = normalizarNombrePuente(nombre);
-      if (!nombre || !clave) continue;
-
-      const base = puentesIniciales.find(p => normalizarNombrePuente(p.nombre) === clave)
-        || puentesConfigurados.find(p => normalizarNombrePuente(p.nombre) === clave)
-        || listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave)
-        || {};
-
-      const puente = {
-        id: base.id || clave,
-        nombre: base.nombre || nombre,
-        km: base.km || "",
-        coordenadas: base.coordenadas || { lat: null, lon: null },
-        alturaMetros: base.alturaMetros || null,
-        imagen: base.imagen || IMAGENES_PUENTES[base.id || clave] || "",
-        mapaUrl: base.mapaUrl || "",
-        mapaEmbedUrl: base.mapaEmbedUrl || "",
-        historial: []
-      };
-
-      const alturaPuente = numeroAPI(lectura.altura_puente ?? lectura.altura_del_puente);
-      if (Number.isFinite(alturaPuente) && alturaPuente > 0) puente.alturaMetros = alturaPuente;
-      puente.lecturaActual = convertirLecturaAPI(lectura);
-      puente.historial = (historialPorPuente.get(clave) || [])
-        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-      puentesRecibidos.push(puente);
-    }
 
     // Neon es la única fuente de verdad: solo se muestran los puentes que existen en Neon.
     // Si un puente fue borrado en Neon, se elimina inmediatamente de la app.
@@ -235,39 +167,6 @@ async function sincronizarAlertas() {
     }
     console.warn("No se pudieron cargar las alertas de Mayu API:", error.message);
   }
-}
-function normalizarNombrePuente(nombre) {
-  return String(nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").replace(/[^a-z0-9]/g, "");
-}
-
-function numeroAPI(valor) {
-  if (valor === null || valor === undefined || valor === "") return NaN;
-  return Number(String(valor).replace(",", "."));
-}
-
-function convertirLecturaAPI(registro) {
-  const nivelMetros = numeroAPI(registro.altura_agua ?? registro.nivel_caudal ?? registro.caudal_historico);
-  const estadoApi = String(registro.estado_puente || "normal").toLocaleLowerCase("es");
-  const estado = estadoApi.includes("cerr") || estadoApi.includes("critic")
-    ? "Cerrado"
-    : estadoApi.includes("alert") || estadoApi.includes("precauc")
-      ? "Alerta"
-      : "Abierto";
-  const fecha = registro.fecha || registro.fecha_registro || registro.created_at || registro.timestamp || new Date().toISOString();
-  return { fecha: String(fecha).replace("T", " ").slice(0, 19), estado, nivelCaudalCm: Number.isFinite(nivelMetros) ? nivelMetros * 100 : null };
-}
-
-function convertirTransicionAPI(evento) {
-  const datos = evento.datos_anteriores || {};
-  const nivelMetros = numeroAPI(datos.altura_agua ?? datos.nivel_caudal ?? datos.caudal_historico);
-  const fecha = evento.fecha_cambio || evento.fecha || "";
-  return {
-    fecha: String(fecha).replace("T", " ").slice(0, 19),
-    estado: evento.estado_nuevo || evento.estado_anterior || "Sin datos",
-    estadoAnterior: evento.estado_anterior || "",
-    estadoNuevo: evento.estado_nuevo || "",
-    nivelCaudalCm: Number.isFinite(nivelMetros) ? nivelMetros * 100 : null
-  };
 }
 function leerJSON(clave, fallback) {
   try { const valor = localStorage.getItem(clave); return valor ? JSON.parse(valor) : fallback; }
@@ -315,6 +214,7 @@ function solicitarUbicacion() {
     const faltanCoordenadas = listaPuentes.some(p => distanciaPuenteKm(p) === null);
     mostrarEstadoUbicacion(faltanCoordenadas ? "Ubicación activa · faltan coordenadas de algunos puentes" : "Ubicación activa · distancias calculadas desde ti");
     renderWidgets();
+    renderMapa();
   }, error => {
     boton.disabled = false;
     mostrarEstadoUbicacion(error.code === 1 ? "Permiso denegado · permite ubicación en el navegador" : "No se pudo obtener la ubicación · intenta de nuevo");
@@ -360,7 +260,6 @@ function contenidoDetalle(p) {
       <div>
       <b>Historial de Estados</b>
       </div>
-      <strong class="history-count">${history.length} registros</strong>
       </div>${history.length ? `<div class="history-list">${history.map(x => {
         const estado = estadoLabel(x.estadoNuevo || x.estado);
         const descripcion = x.estadoAnterior && x.estadoNuevo
@@ -391,13 +290,12 @@ function abrirDetalle(id, navegar = true) {
   paginaDetalle.dataset.bridgeId = id;
   paginaDetalle.classList.remove("open", "warning", "closed");
   paginaDetalle.classList.add("detail-view", c);
-  document.getElementById("detalle-puente").innerHTML = `<button class="back-button" onclick="volverAWidgets()"><span>←</span> Volver a Widgets</button>
+  document.getElementById("detalle-puente").innerHTML = `<button class="back-button" onclick="volverAWidgets()"><span>←</span> Volver a Puentes</button>
     <div class="detail-titlebar"><h1 id="detail-title">Detalles del Puente</h1><span class="status-tag ${c}"><i></i>${escapar(estadoLabel(r.estado))}</span></div>
     <div class="detail-hero ${puente.imagen ? "with-image" : ""}" ${puente.imagen ? `style="--bridge-image:url('${escapar(puente.imagen)}')"` : ""}>
       <div class="detail-hero-shade">
       </div>
       <div>
-      <span class="distance">KM ${escapar(puente.km)}</span>
       <h2>${escapar(puente.nombre)}</h2>
       </div>
       </div>

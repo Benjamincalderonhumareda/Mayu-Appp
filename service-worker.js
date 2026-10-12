@@ -1,8 +1,9 @@
-const CACHE_NAME = "mayualert-shell-v21";
+const CACHE_NAME = "mayualert-shell-v24";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
+  "./api.js",
   "./app.js",
   "./cuentas.js",
   "./widget.js",

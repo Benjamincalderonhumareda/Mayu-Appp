@@ -1,7 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+/*
+  GUÍA: Base = estilos compartidos. Puentes, Mapa, Usuario y Detalles = cada vista.
+  Móvil = ajustes para pantallas pequeñas. Usa la flecha junto a cada región para plegarla.
+*/
+/* #region 01 - ESTRUCTURA GENERAL ===================================== */
 :root {
   color-scheme:dark;
-  --bg:#101318;
+  --bg:#090c11;
   --panel:#191d25;
   --panel-2:#141820;
   --line:#292f3a;
@@ -33,7 +38,7 @@ body {
   width:min(100%,520px);
   min-height:100vh;
   margin:0 auto;
-  background:#101318;
+  background:var(--bg);
   padding:0 18px 94px
 }
 .topbar {
@@ -84,7 +89,7 @@ body {
 .page.active {
   display:block
 }
-.connection i,.live-pill i,.map-footnote i {
+.connection i,.map-footnote i {
   width:7px;
   height:7px;
   border-radius:50%;
@@ -102,33 +107,12 @@ body {
 #page-mapa,#page-widgets {
   padding-top:0
 }
-.eyebrow {
-  color:#9aa6b4;
-  font:9px 'DM Mono',monospace;
-  letter-spacing:.12em;
-  margin:0 0 4px
-}
 .page-heading h1 {
   margin:0;
   font-size:23px;
   line-height:1.1;
   font-weight:800;
   letter-spacing:-.035em
-}
-.live-pill {
-  display:flex;
-  align-items:center;
-  gap:7px;
-  background:#102820;
-  border:1px solid #1c4938;
-  color:#56d9ad;
-  border-radius:99px;
-  padding:6px 10px;
-  font:10px 'DM Mono',monospace
-}
-.live-pill i {
-  width:6px;
-  height:6px
 }
 .heading-icon {
   height:36px;
@@ -168,45 +152,18 @@ body {
 .search input::placeholder {
   color:#737e8d
 }
-.summary {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:6px;
-  margin:10px 0 12px
-}
-.summary>span:not(.summary-all) {
-  padding:4px 7px;
-  border:1px solid var(--line);
-  border-radius:7px;
-  color:#c0c6d0;
-  font:9px 'DM Mono',monospace;
-  white-space:nowrap
-}
-.summary i,.status-tag i,.assigned-dot {
+.status-tag i {
   display:inline-block;
   width:6px;
   height:6px;
   border-radius:50%;
-  margin-right:4px
-}
-.summary-all {
-  font-size:12px;
-  font-weight:800;
-  color:#fff
-}
-.summary-all small {
-  display:block;
-  color:#8993a1;
-  font:9px 'DM Mono',monospace
-}
-.summary-open i,.status-tag i,.assigned-dot.open {
+  margin-right:4px;
   background:var(--green)
 }
-.summary-warning i,.warning .status-tag i,.assigned-dot.warning {
+.warning .status-tag i {
   background:var(--amber)
 }
-.summary-closed i,.closed .status-tag i,.assigned-dot.closed {
+.closed .status-tag i {
   background:var(--red)
 }
 .filter-row {
@@ -258,9 +215,10 @@ body {
 }
 .bridge-list {
   display:grid;
+  min-width:0;
   gap:11px
 }
-.bridge-card,.map-card,.alert-card {
+.bridge-card,.map-card {
   overflow:hidden;
   border:1px solid #29313c;
   background:var(--panel);
@@ -271,15 +229,15 @@ body {
   --accent:var(--green);
   border-color:#12664f
 }
-.bridge-card.warning,.map-card.warning,.alert-card.warning {
+.bridge-card.warning,.map-card.warning {
   --accent:var(--amber);
   border-color:#75500e
 }
-.bridge-card.closed,.map-card.closed,.alert-card.closed {
+.bridge-card.closed,.map-card.closed {
   --accent:var(--red);
   border-color:#772c33
 }
-.bridge-top,.bridge-title-row,.capacity-label,.history-line {
+.bridge-title-row,.capacity-label,.history-line {
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -299,24 +257,13 @@ body {
 .status-tag i {
   margin:0 5px 0 0
 }
-.distance,.bridge-id {
-  background:#292e37;
-  border-radius:99px;
-  padding:3px 8px;
-  color:#aab3c1;
-  font:9px 'DM Mono',monospace;
-  white-space:nowrap
-}
 .bridge-title-row {
   margin:8px 0
 }
-.bridge-title-row h2,.alert-card h2 {
+.bridge-title-row h2 {
   margin:0;
   font-size:15px;
   letter-spacing:-.015em
-}
-.bridge-id {
-  font-size:8px
 }
 .metrics {
   display:grid;
@@ -373,59 +320,6 @@ body {
   background:var(--accent,var(--green));
   border-radius:10px
 }
-.details-toggle {
-  width:100%;
-  height:32px;
-  padding:0 9px;
-  border:1px solid #292f39;
-  border-radius:10px;
-  background:#141820;
-  color:#9ca8b8;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  font:10px 'DM Sans',sans-serif;
-  text-align:left;
-  cursor:pointer
-}
-.details-toggle:hover {
-  color:#eaf0f7;
-  border-color:#454d59
-}
-.bridge-details {
-  display:none;
-  padding-top:10px
-}
-.bridge-details.expanded {
-  display:grid;
-  gap:10px
-}
-.bridge-photo {
-  height:130px;
-  position:relative;
-  display:grid;
-  place-items:center;
-  overflow:hidden;
-  border:1px solid #303743;
-  border-radius:13px;
-  background:linear-gradient(145deg,#1a333a,#202530 55%,#12161d)
-}
-.bridge-photo img {
-  position:absolute;
-  width:100%;
-  height:100%;
-  object-fit:cover
-}
-.photo-caption {
-  position:absolute;
-  bottom:8px;
-  left:10px;
-  color:#c6d1df;
-  background:#101318bb;
-  border-radius:5px;
-  padding:3px 6px;
-  font-size:9px
-}
 .chart-card,.history-card,.settings-card {
   background:#1a1e27;
   border:1px solid #2a303a;
@@ -465,7 +359,7 @@ body {
 .history-chart {
   display:block;
   width:100%;
-  height:70px;
+  height:78px;
   color:var(--cyan);
   background:linear-gradient(0deg,#18c9e81a,transparent);
   border-bottom:1px solid #34404c
@@ -617,29 +511,9 @@ body {
   background:var(--cyan);
   box-shadow:none
 }
-.separator {
-  color:#596371
-}
-.intro-copy,.muted {
+.muted {
   color:#929dab;
   font-size:11px
-}
-.intro-copy {
-  margin:-6px 0 14px
-}
-.alert-card {
-  padding:14px
-}
-.alert-card h2 {
-  margin:10px 0 3px
-}
-.alert-card p {
-  margin:0 0 12px;
-  color:#abb4c0;
-  font-size:11px
-}
-.alert-card .details-toggle {
-  height:34px
 }
 .profile-card {
   display:flex;
@@ -679,17 +553,6 @@ body {
   align-items:center;
   justify-content:space-between
 }
-.count-pill {
-  border:1px solid #1a5667;
-  background:#102a35;
-  border-radius:99px;
-  padding:5px 9px;
-  color:var(--cyan);
-  font:9px 'DM Mono',monospace
-}
-.section-hint {
-  margin:5px 0 12px
-}
 .assigned-list {
   display:grid;
   gap:7px
@@ -702,12 +565,6 @@ body {
   background:#141820;
   border-radius:11px;
   padding:9px
-}
-.assigned-dot {
-  width:8px;
-  height:8px;
-  margin:0;
-  flex:none
 }
 .assigned-name {
   min-width:0;
@@ -724,7 +581,7 @@ body {
   font:9px 'DM Mono',monospace;
   margin-top:2px
 }
-.assigned-row input,.toggle {
+.toggle {
   appearance:none;
   width:32px;
   height:18px;
@@ -736,7 +593,7 @@ body {
   transition:.2s;
   flex:none
 }
-.assigned-row input::after,.toggle::after {
+.toggle::after {
   content:"";
   position:absolute;
   width:12px;
@@ -747,36 +604,12 @@ body {
   background:#d5dbe2;
   transition:.2s
 }
-.assigned-row input:checked,.toggle:checked {
+.toggle:checked {
   background:#2869ed
 }
-.assigned-row input:checked::after,.toggle:checked::after {
+.toggle:checked::after {
   left:17px;
   background:white
-}
-.setting-row {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:13px 0 2px
-}
-.setting-row b,.setting-row small {
-  display:block
-}
-.setting-row b {
-  font-size:11px
-}
-.setting-row small {
-  color:#929dab;
-  font-size:10px;
-  margin-top:3px
-}
-.local-note {
-  color:#778391;
-  font-size:10px;
-  line-height:1.6;
-  margin:14px 3px
 }
 .empty-state {
   padding:35px 15px;
@@ -802,7 +635,7 @@ body {
   height:70px;
   border-top:1px solid #2a3039;
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(3,1fr);
   padding:6px 10px max(6px,env(safe-area-inset-bottom));
   backdrop-filter:blur(12px)
 }
@@ -828,23 +661,10 @@ body {
   object-fit:cover
 }
 .nav-item small {
-  font:9px 'DM Sans',sans-serif
+  font:10px 'DM Sans',sans-serif
 }
 .nav-item.active {
   color:var(--cyan)
-}
-.nav-alert {
-  position:relative
-}
-.nav-alert::after {
-  content:"";
-  position:absolute;
-  right:-4px;
-  top:0;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:var(--red)
 }
 @media(min-width:700px) {
   body {
@@ -863,7 +683,8 @@ body {
     border-radius:0 0 22px 22px
   }
 }
-/* Detalle independiente del listado */
+/* #endregion */
+/* #region 02 - DETALLES DEL PUENTE ==================================== */
 .bridge-card[role="button"] {
   cursor:pointer;
   transition:transform .16s,border-color .16s
@@ -977,16 +798,14 @@ body {
   color:var(--cyan)
 }
 .detail-current small {
-  font-size:9px;
+  font-size:16px;
   color:#9da8b6
-}
-.detail-page .bridge-photo {
-  height:136px
 }
 .detail-page .chart-card,.detail-page .history-card {
   margin-bottom:10px
 }
-/* Perfil de usuario según la pantalla compartida */
+/* #endregion */
+/* #region 03 - PERFIL DE USUARIO ====================================== */
 .user-page-heading {
   margin:2px -18px 0;
   padding:9px 12px 11px;
@@ -995,12 +814,6 @@ body {
 .user-page-heading h1 {
   margin:0;
   font-size:16px
-}
-.user-page-heading p {
-  margin:1px 0 0;
-  color:#8793a3;
-  font:8px 'DM Mono',monospace;
-  letter-spacing:.1em
 }
 .page:has(.user-page-heading) {
   padding-top:0
@@ -1012,12 +825,6 @@ body {
   background:#1a1e27;
   border:1px solid #2b303b;
   border-radius:17px
-}
-.profile-top {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:11px
 }
 .profile-avatar {
   position:relative;
@@ -1047,43 +854,6 @@ body {
   font-size:12px;
   margin:0
 }
-.profile-main p {
-  color:#75b6ff;
-  font:8px 'DM Mono',monospace;
-  margin:3px 0 0
-}
-.profile-main p i {
-  display:inline-block;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:#3280fa;
-  margin-right:4px
-}
-.profile-contact {
-  min-height:24px;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  margin-top:5px;
-  padding:5px 8px;
-  border:1px solid #262c36;
-  border-radius:8px;
-  background:#12161d;
-  color:#9ba8b9;
-  font:8px 'DM Mono',monospace
-}
-.profile-contact span {
-  color:#6e9ce2
-}
-.profile-contact b {
-  font-weight:400
-}
-.profile-contact a {
-  margin-left:auto;
-  color:#84b8ff;
-  text-decoration:none
-}
 .page:has(.user-page-heading) .settings-card {
   padding:11px;
   margin:10px 0;
@@ -1100,16 +870,6 @@ body {
   display:flex;
   align-items:center;
   margin:0
-}
-.yellow-icon {
-  color:var(--amber);
-  font-size:14px;
-  margin-right:5px
-}
-.red-icon {
-  color:#fa7673;
-  font-size:14px;
-  margin-right:5px
 }
 .alert-frequency,.direct-link {
   padding:3px 7px;
@@ -1198,23 +958,6 @@ body {
 .page:has(.user-page-heading) .assigned-row.selected .assigned-name small {
   color:#76baff
 }
-.page:has(.user-page-heading) .assigned-row input {
-  position:absolute;
-  opacity:0;
-  pointer-events:none
-}
-.selected-check {
-  width:12px;
-  height:12px;
-  display:grid;
-  place-items:center;
-  flex:none;
-  border-radius:50%;
-  border:1px solid #428cff;
-  color:#fff;
-  background:#286df3;
-  font-size:8px
-}
 .municipal-card .direct-link {
   border-color:#59352d;
   background:#2b1b1b;
@@ -1301,23 +1044,14 @@ body {
   font-size:14px;
   margin-right:5px
 }
-.bottom-nav {
-  grid-template-columns:repeat(4,1fr)
-}
-/* En Perfil el encabezado reemplaza la barra global de marca, como en la maqueta. */
+/* #endregion */
+/* Ajustes del perfil: encabezado y navegación */
 .app-shell:has(#page-usuario.active)>.topbar {
   display:none
 }
-.bottom-nav {
-  grid-template-columns:repeat(3,1fr)
-}
-/* Más contraste y jerarquía tipográfica en la lista de puentes. */
+/* #region 04 - TARJETAS DE PUENTES ==================================== */
 .page-heading h1 {
   font-size:25px
-}
-.eyebrow {
-  font-size:10px;
-  color:#b5bfcc
 }
 .location-button {
   width:100%;
@@ -1339,19 +1073,11 @@ body {
   opacity:.7;
   cursor:wait
 }
-.location-icon {
-  font-size:17px;
-  color:#39c9ee
-}
 .search {
   height:43px
 }
 .search input {
   font-size:13px
-}
-.summary>span:not(.summary-all) {
-  font-size:10px;
-  padding:5px 8px
 }
 .filter-chip {
   font-size:10px;
@@ -1371,6 +1097,9 @@ body {
   background:#079b70;
   color:white
 }
+.bridge-card {
+  min-width:0
+}
 .bridge-card.warning .bridge-status-head {
   background:#ef9300
 }
@@ -1378,11 +1107,15 @@ body {
   background:#e6232c
 }
 .bridge-location {
-  max-width:70%;
+  min-width:0;
+  flex:1;
   font-size:10px;
   font-weight:800;
   line-height:1.25;
-  letter-spacing:.045em
+  letter-spacing:.045em;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
 }
 .bridge-status-head .status-tag {
   flex:none;
@@ -1405,10 +1138,6 @@ body {
 .bridge-title-row h2 {
   font-size:17px;
   font-weight:800
-}
-.bridge-id {
-  font-size:9px;
-  color:#c4cedb
 }
 .metrics {
   gap:9px;
@@ -1457,12 +1186,10 @@ body {
   color:#ff494f
 }
 .status-tag {
-  font-size:10px
+  font-size:14px
 }
-.distance {
-  font-size:9px
-}
-/* Usuario: adaptar la jerarquía y las tarjetas de Stitch a los datos dinámicos existentes. */
+/* #endregion */
+/* #region 05 - ALERTAS Y MUNICIPALIDAD ================================ */
 .page:has(.user-page-heading) {
   font-family:'Hanken Grotesk','DM Sans',sans-serif
 }
@@ -1478,11 +1205,6 @@ body {
   font-size:20px;
   letter-spacing:-.025em
 }
-.user-page-heading p {
-  font:9px 'JetBrains Mono','DM Mono',monospace;
-  color:#8492a5;
-  letter-spacing:.1em
-}
 .page:has(.user-page-heading) .profile-card {
   padding:16px;
   margin:13px 0;
@@ -1491,10 +1213,6 @@ body {
   border-radius:17px;
   gap:13px;
   box-shadow:0 8px 22px #0003
-}
-.profile-top {
-  gap:13px;
-  margin:0 0 2px
 }
 .profile-avatar {
   width:58px;
@@ -1529,67 +1247,13 @@ body {
   font-size:17px;
   font-family:'Hanken Grotesk',sans-serif
 }
-.user-badges {
-  display:flex;
-  align-items:center;
-  gap:6px;
-  margin-top:5px
-}
-.operator-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  padding:3px 8px;
-  border:1px solid #10b981;
-  border-radius:99px;
-  background:#10b98124;
-  color:#34d399;
-  font:700 8px 'JetBrains Mono',monospace;
-  letter-spacing:.07em
-}
-.operator-badge i,.priority-alert b i {
+.priority-alert b i {
   display:inline-block;
   width:7px;
   height:7px;
   border-radius:50%;
   background:#10b981;
   box-shadow:0 0 7px #10b981aa
-}
-.page:has(.user-page-heading) .profile-contact {
-  min-height:36px;
-  gap:8px;
-  margin-top:7px;
-  padding:8px 10px;
-  border:1px solid #2a303c;
-  border-radius:10px;
-  background:#0e131f;
-  font:10px 'JetBrains Mono',monospace;
-  color:#f8fafc
-}
-.profile-contact>.material-symbols-outlined {
-  font-size:17px;
-  color:#38bdf8
-}
-.profile-contact b {
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  font:600 10px 'JetBrains Mono',monospace
-}
-.profile-contact a {
-  font:700 10px 'JetBrains Mono',monospace;
-  color:#38bdf8;
-  white-space:nowrap
-}
-.official-badge {
-  margin-left:auto;
-  padding:3px 6px;
-  border:1px solid #38bdf866;
-  border-radius:5px;
-  background:#1e3a8a99;
-  color:#bfdbfe;
-  font:700 7px 'JetBrains Mono',monospace
 }
 .page:has(.user-page-heading) .settings-card {
   padding:15px;
@@ -1736,26 +1400,6 @@ body {
 .page:has(.user-page-heading) .assigned-row.selected .assigned-name small {
   color:#93c5fd
 }
-.page:has(.user-page-heading) .assigned-row input {
-  position:absolute;
-  opacity:0;
-  pointer-events:none
-}
-.selected-check {
-  width:auto;
-  height:auto;
-  border:0;
-  background:none;
-  color:#fff
-}
-.selected-check .material-symbols-outlined {
-  font-size:23px;
-  color:#fff
-}
-.unselected-check {
-  color:#8492a5;
-  font-size:18px
-}
 .municipal-card .user-section-icon {
   border-color:#ef444480;
   background:#ef444425;
@@ -1851,6 +1495,8 @@ body {
 .municipality-info .municipality-numbers b,.municipality-info .municipality-numbers a {
   font:700 10px 'JetBrains Mono',monospace
 }
+/* #endregion */
+/* #region 06 - PUENTES EN MÓVIL ======================================= */
 @media(max-width:480px) {
 .app-shell {
     padding-left:14px;
@@ -1886,20 +1532,6 @@ body {
   }
 .search input {
     font-size:15px
-  }
-.summary {
-    gap:5px;
-    margin:12px 0 14px
-  }
-.summary-all {
-    font-size:15px
-  }
-.summary-all small {
-    font-size:10px
-  }
-.summary>span:not(.summary-all) {
-    padding:6px 8px;
-    font-size:10px
   }
 .filter-row {
     gap:8px;
@@ -1937,12 +1569,7 @@ body {
     margin:8px 0 12px
   }
 .bridge-title-row h2 {
-    font-size:20px;
     line-height:1.2
-  }
-.bridge-id {
-    font-size:10px;
-    padding:4px 8px
   }
 .metrics {
     gap:10px;
@@ -1953,22 +1580,14 @@ body {
     padding:11px 12px;
     border-radius:14px
   }
-.metric>span {
-    font-size:10px;
-    letter-spacing:.025em
-  }
 .metric>b {
-    margin-top:5px;
-    font-size:27px
+    margin-top:5px
   }
 .metric small {
     font-size:13px
   }
 .capacity {
     margin:13px 0 11px
-  }
-.capacity-label {
-    font-size:12px
   }
 .capacity-track {
     height:5px;
@@ -1977,17 +1596,11 @@ body {
 .details-prompt {
     height:39px;
     margin-top:11px;
-    padding-top:11px;
-    font-size:13px
-  }
-.bottom-nav {
-    height:76px
-  }
-.nav-item small {
-    font-size:11px
+    padding-top:11px
   }
 }
-/* Mapas: búsqueda clara y estados con contraste fuerte como en la referencia. */
+/* #endregion */
+/* #region 07 - MAPA ==================================================== */
 .map-search-row {
   margin:0 0 14px
 }
@@ -2098,20 +1711,14 @@ body {
   color:#06202a
 }
 .map-card {
+  padding:0;
+  background:#151b24;
   overflow:hidden;
   transition:border-color .18s,box-shadow .18s
 }
-.map-card.closed {
-  border:1.5px solid #ee414a;
-  box-shadow:0 0 16px #ef334422
-}
-.map-card.warning {
-  border:1.5px solid #e79a0a;
-  box-shadow:0 0 16px #ee9c1822
-}
-.map-card.open {
-  border:1.5px solid #0aa981;
-  box-shadow:0 0 16px #05c8941c
+.map-card.closed,.map-card.warning,.map-card.open {
+  border-color:#29313c;
+  box-shadow:none
 }
 .map-preview>.status-tag {
   font-size:12px;
@@ -2174,6 +1781,8 @@ body {
   border-color:#953039;
   color:#ff545c
 }
+/* #endregion */
+/* #region 08 - AJUSTES MÓVILES: MAPA Y NAVEGACIÓN ====================== */
 @media(max-width:480px) {
   .map-search-row .search {
     height:58px
@@ -2201,14 +1810,7 @@ body {
     padding:0 3px;
     font-size:10px
   }
-.map-card-body .bridge-title-row h2 {
-    font-size:20px
-  }
-.map-status {
-    font-size:13px
-  }
-}
-@media(max-width:480px) {
+/* Ajustes móviles para encabezados, detalles y perfil */
   body {
     font-size:16px;
     line-height:1.5
@@ -2232,21 +1834,6 @@ body {
 .page-heading h1 {
     font-size:29px
   }
-.eyebrow {
-    font-size:11px
-  }
-.live-pill {
-    padding:8px 11px;
-    font-size:11px
-  }
-.summary>span:not(.summary-all) {
-    font-size:9px;
-    padding:6px 6px
-  }
-.summary i {
-    width:7px;
-    height:7px
-  }
 .filter-chip {
     font-size:12px;
     padding:9px 12px
@@ -2258,36 +1845,22 @@ body {
     min-height:70px
   }
 .bridge-location {
-    font-size:13px
+    max-width:68%;
+    line-height:1.35;
+    letter-spacing:.035em
   }
 .bridge-status-head .status-tag {
     font-size:12px
-  }
-.bridge-title-row h2 {
-    font-size:21px
-  }
-.bridge-id {
-    font-size:11px
   }
 .metric {
     min-height:92px;
     padding:13px
   }
-.metric>span {
-    font-size:11px
-  }
-.metric>b {
-    font-size:30px
-  }
 .metric small {
     font-size:14px
   }
-.capacity-label {
-    font-size:13px
-  }
 .details-prompt {
-    height:44px;
-    font-size:14px
+    height:44px
   }
 .page-heading {
     margin-bottom:19px
@@ -2298,18 +1871,8 @@ body {
 .search input {
     font-size:16px
   }
-.detail-titlebar h1 {
-    font-size:21px
-  }
 .back-button {
     height:40px;
-    font-size:12px
-  }
-.detail-hero {
-    height:235px
-  }
-.detail-hero h2 {
-    font-size:25px
   }
 .detail-current {
     gap:8px
@@ -2318,63 +1881,17 @@ body {
     padding:10px
   }
 .detail-current span {
-    font-size:8px;
     line-height:1.4
-  }
-.detail-current b {
-    font-size:19px
-  }
-.detail-heading b {
-    font-size:15px
-  }
-.detail-heading small {
-    font-size:11px
   }
 .detail-heading>span {
     width:31px;
     height:31px
   }
-.history-chart {
-    height:112px
-  }
-.chart-labels {
-    font-size:10px
-  }
-.history-line>b,.history-line strong {
-    font-size:11px
-  }
 .history-line .status-tag {
-    font-size:10px;
     padding:4px 7px
-  }
-.map-preview {
-    height:196px
-  }
-.map-card-body .bridge-title-row h2 {
-    font-size:20px
-  }
-.map-card-body .distance {
-    font-size:10px
-  }
-.map-status {
-    font-size:13px;
-    padding:11px
-  }
-.map-open {
-    font-size:11px;
-    padding:10px 13px
-  }
-.map-footnote {
-    font-size:11px
   }
 .user-page-heading {
     min-height:75px
-  }
-.user-page-heading h1 {
-    font-size:22px
-  }
-.user-page-heading p {
-    font-size:10px
   }
 .profile-avatar {
     width:64px;
@@ -2383,33 +1900,9 @@ body {
 .profile-avatar .material-symbols-outlined {
     font-size:36px
   }
-.profile-main h2 {
-    font-size:19px
-  }
-.operator-badge {
-    font-size:9px;
-    padding:5px 9px
-  }
-.page:has(.user-page-heading) .profile-contact {
-    min-height:43px;
-    padding:10px;
-    font-size:12px
-  }
-.profile-contact b,.profile-contact a {
-    font-size:11px
-  }
-.profile-contact>.material-symbols-outlined {
-    font-size:20px
-  }
-.official-badge {
-    font-size:8px
-  }
 .page:has(.user-page-heading) .settings-card {
     padding:16px;
     margin:14px 0
-  }
-.page:has(.user-page-heading) .section-title h2 {
-    font-size:12px
   }
 .user-section-icon {
     width:34px;
@@ -2419,18 +1912,11 @@ body {
     font-size:23px
   }
 .alert-frequency,.municipal-card .direct-link {
-    font-size:9px;
     padding:6px 9px
   }
 .priority-alert {
     min-height:68px;
     padding:12px 13px
-  }
-.priority-alert b {
-    font-size:13px
-  }
-.priority-alert small {
-    font-size:10px
   }
 .priority-alert .toggle {
     width:46px;
@@ -2445,27 +1931,12 @@ body {
 .priority-alert .toggle:checked::after {
     left:25px
   }
-.choose-bridge-title {
-    font-size:10px
-  }
 .choose-bridge-title b {
     font-size:9px
   }
 .page:has(.user-page-heading) .assigned-row {
     min-height:64px;
     padding:11px 12px
-  }
-.page:has(.user-page-heading) .assigned-name b {
-    font-size:14px
-  }
-.page:has(.user-page-heading) .assigned-name small {
-    font-size:9px
-  }
-.selected-check .material-symbols-outlined {
-    font-size:26px
-  }
-.unselected-check {
-    font-size:20px
   }
 .municipality-info {
     padding:14px
@@ -2477,69 +1948,21 @@ body {
 .municipality-icon .material-symbols-outlined {
     font-size:27px
   }
-.municipality-heading b {
-    font-size:14px
-  }
-.municipality-heading small {
-    font-size:10px
-  }
-.municipality-numbers span {
-    font-size:8px
-  }
-.municipality-info .municipality-numbers b,.municipality-info .municipality-numbers a {
-    font-size:10px
-  }
 .emergency-call {
-    min-height:50px;
-    font-size:12px
+    min-height:50px
   }
 .emergency-call .material-symbols-outlined {
     font-size:22px
   }
 .signout-button {
-    height:48px;
-    font-size:12px
+    height:48px
   }
 .signout-button .material-symbols-outlined {
     font-size:19px
   }
-.bottom-nav {
-    height:82px
-  }
-.nav-item small {
-    font-size:12px
-  }
 }
-/* Widget: contadores y filtros más juntos y legibles. */
-#page-widgets .summary {
-  display:grid;
-  grid-template-columns:minmax(48px,.65fr) repeat(3,minmax(0,1fr));
-  justify-content:initial;
-  gap:7px;
-  margin:12px 0 14px
-}
-#page-widgets .summary-all {
-  font-size:18px;
-  line-height:1.05
-}
-#page-widgets .summary-all small {
-  font-size:11px;
-  margin-top:3px
-}
-#page-widgets .summary>span:not(.summary-all) {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:5px;
-  padding:8px 5px;
-  font-size:12px;
-  line-height:1.1
-}
-#page-widgets .summary i {
-  width:8px;
-  height:8px;
-  flex:none
-}
+/* #endregion */
+/* #region 09 - ENCABEZADO Y FILTROS DE PUENTES ========================= */
 #page-widgets .filter-row {
   gap:8px;
   padding-bottom:12px
@@ -2583,6 +2006,7 @@ body {
 .widget-search-row {
   display:grid;
   grid-template-columns:minmax(0,1fr) 50px;
+  min-width:0;
   gap:9px;
   align-items:center;
   margin:0 0 13px
@@ -2620,11 +2044,6 @@ body {
 .location-status.visible {
   display:block
 }
-#page-widgets .summary {
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin:10px 0 16px
-}
 .summary-chip {
   min-width:0;
   min-height:52px;
@@ -2640,6 +2059,12 @@ body {
   font:500 13px 'JetBrains Mono','DM Mono',monospace;
   cursor:pointer;
   transition:transform .15s,filter .15s
+}
+#status-summary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 14px
 }
 .summary-chip:hover {
   transform:translateY(-1px);
@@ -2685,6 +2110,8 @@ body {
 .summary-chip.selected {
   box-shadow:inset 0 0 0 1px currentColor
 }
+/* #endregion */
+/* #region 10 - AJUSTES MÓVILES Y TIPOGRAFÍA =========================== */
 @media(max-width:480px) {
 .widget-topbar {
     min-height:76px;
@@ -2707,11 +2134,6 @@ body {
     width:49px;
     height:50px;
     min-height:50px
-  }
-#page-widgets .summary {
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:7px;
-    margin:9px 0 15px
   }
 .summary-chip {
     min-height:55px;
@@ -2752,9 +2174,6 @@ body {
 }
 .bridge-title-row h2 {
   font-size:21px
-}
-.bridge-id {
-  font-size:11px
 }
 .metric>span {
   font-size:11px
@@ -2804,17 +2223,8 @@ body {
 .user-page-heading h1 {
   font-size:23px
 }
-.user-page-heading p {
-  font-size:10px
-}
 .profile-main h2 {
   font-size:20px
-}
-.operator-badge {
-  font-size:9px
-}
-.profile-contact b,.profile-contact a {
-  font-size:11px
 }
 .page:has(.user-page-heading) .section-title h2 {
   font-size:13px
@@ -2866,12 +2276,7 @@ body {
 .signout-button {
   font-size:13px
 }
-.bottom-nav {
-  height:86px
-}
-.nav-item small {
-  font-size:13px
-}
+/* Ajustes tipográficos en móvil */
 @media(max-width:480px) {
   .widget-topbar h1 {
     font-size:24px
@@ -2937,9 +2342,6 @@ body {
 .profile-main h2 {
     font-size:19px
   }
-.profile-contact b,.profile-contact a {
-    font-size:11px
-  }
 .page:has(.user-page-heading) .section-title h2 {
     font-size:12px
   }
@@ -2970,15 +2372,10 @@ body {
 .emergency-call {
     font-size:12px
   }
-.bottom-nav {
-    height:90px
-  }
-.nav-item small {
-    font-size:13px
-  }
 }
 
-/* Cian brillante en detalle y mapas con el estado del puente como acento. */
+/* #endregion */
+/* #region 11 - DETALLE Y TARJETAS DEL MAPA ============================= */
 .detail-titlebar h1 {
   font-size:19px;
   color:#f4f7fb
@@ -2997,11 +2394,11 @@ body {
   border-color:#303846
 }
 .detail-current span {
-  font-size:8px;
+  font-size:12px;
   color:#a8b3c1
 }
 .detail-current b {
-  font-size:17px;
+  font-size:24px;
   color:#18c9e8
 }
 .chart-card,.history-card {
@@ -3010,11 +2407,11 @@ body {
   padding:14px
 }
 .detail-heading b {
-  font-size:13px;
+  font-size:16px;
   color:#f2f5f8
 }
 .detail-heading small {
-  font-size:10px
+  font-size:12px
 }
 .detail-heading>span {
   color:#16d1f5;
@@ -3027,7 +2424,7 @@ body {
   background:linear-gradient(0deg,#10c9e826,transparent)
 }
 .chart-labels {
-  font-size:9px
+  font-size:11px
 }
 .chart-labels b {
   color:#18d7f4
@@ -3037,40 +2434,32 @@ body {
   border-left-color:#343e4a
 }
 .history-line>b,.history-line strong {
-  font-size:10px
+  font-size:12px
 }
 .history-line .status-tag {
-  font-size:9px
+  font-size:11px
 }
 .map-preview {
-  height:174px;
-  background-color:#111820
+  height:220px;
+  background-color:#111820;
+  border-radius:16px 16px 0 0
 }
 .map-preview::before {
   z-index:1;
   background:linear-gradient(180deg,#05080a38,#05080a00 36%,#05080a99)
 }
-.map-frame {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  border:0;
-  opacity:.94;
-  filter:saturate(.82) contrast(1.08)
-}
 .map-preview>.status-tag {
   z-index:2;
   background:#080d13e8;
   border-width:1px;
-  font-size:10px;
-  padding:5px 9px
+  font-size:13px;
+  padding:7px 12px
 }
 .map-open {
   z-index:2;
   color:#fff!important;
-  padding:8px 12px;
-  font-size:10px
+  padding:12px 18px;
+  font-size:13px
 }
 .map-card.open .map-open {
   background:#08b98a
@@ -3082,15 +2471,49 @@ body {
   background:#e9313a
 }
 .map-card-body {
-  padding:3px 13px 13px
+  padding:8px 16px 16px
 }
 .map-card-body .bridge-title-row h2 {
-  font-size:17px
+  font-size:22px
+}
+.map-location {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin:4px 0 20px;
+  color:#a8b3c1;
+  font-size:16px
+}
+.map-location .material-symbols-outlined {
+  color:#8aa6c5;
+  font-size:19px
 }
 .map-status {
-  font-size:11px;
+  gap:12px;
+  min-height:64px;
+  padding:12px 16px;
+  font-size:16px;
   font-weight:700;
-  padding:9px 10px
+  border-radius:18px
+}
+.map-status-icon {
+  display:grid;
+  flex:0 0 36px;
+  width:36px;
+  height:36px;
+  place-items:center;
+  border-radius:50%;
+  background:#ffffff0d;
+  font-size:21px
+}
+.map-status-text {
+  flex:1
+}
+.map-status-note {
+  margin-left:auto;
+  font-size:15px;
+  font-weight:500;
+  white-space:nowrap
 }
 .map-status.open {
   background:#0c3028;
@@ -3111,34 +2534,23 @@ body {
   font-size:10px;
   color:#c0cad6
 }
-.bottom-nav {
-  height:72px
-}
-.nav-item small {
-  font-size:10px
-}
 .nav-item.active {
   color:#1cccf0
 }
-.bottom-nav {
-  height:78px
+/* #endregion */
+/* #region 12 - SEGUIMIENTO DE PUENTES Y MUNICIPALIDAD ================== */
+.page:has(.user-page-heading) .assigned-indicator {
+  flex:none;
+  color:#8492a5;
+  font-size:22px;
+  line-height:1
 }
-/* Un solo indicador circular para los puentes seguidos. */
 .page:has(.user-page-heading) .assigned-row input {
   position:absolute;
   width:1px;
   height:1px;
   opacity:0;
   pointer-events:none
-}
-.page:has(.user-page-heading) .assigned-row input::after {
-  content:none
-}
-.page:has(.user-page-heading) .assigned-indicator {
-  flex:none;
-  color:#8492a5;
-  font-size:22px;
-  line-height:1
 }
 .page:has(.user-page-heading) .assigned-row.selected .assigned-indicator {
   color:#fff
@@ -3316,18 +2728,12 @@ body {
   font:600 13px 'Hanken Grotesk',sans-serif;
   cursor:pointer;
 }
-.account-note {
-  display:block;
-  margin-top:12px;
-  color:#8793a3;
-  font-size:11px;
-  text-align:center;
-}
 #user-profile-content[hidden] {
   display:none;
 }
 
-/* Perfil: avatar grande a la izquierda y datos en columna a la derecha. */
+/* #endregion */
+/* #region 13 - DISEÑO DEL PERFIL ======================================= */
 .page:has(.user-page-heading) .profile-layout {
   display:grid;
   grid-template-columns:52px minmax(0,1fr);
@@ -3369,30 +2775,18 @@ body {
 .page:has(.user-page-heading) .profile-details {
   min-width:0
 }
-.page:has(.user-page-heading) .profile-top {
-  margin:0 0 8px
-}
-.page:has(.user-page-heading) .profile-contact {
-  margin-top:6px
-}
 
+/* #endregion */
+/* #region 14 - PERFIL E HISTORIAL EN MÓVIL ============================= */
 @media(max-width:480px) {
   .user-page-heading { flex-wrap:wrap; }
   .page:has(.user-page-heading) .profile-card { flex:1 1 100%; min-width:0; margin:0; }
   .page:has(.user-page-heading) .profile-main h2 { overflow-wrap:anywhere; }
 }
 
+/* Historial de estados dentro del detalle */
 .history-card .detail-heading { align-items:center; }
 .history-card .detail-heading b { font-size:15px; }
-.history-count {
-  margin-left:auto;
-  padding:6px 10px;
-  border-radius:99px;
-  background:#242a33;
-  color:#b9eaff;
-  font:600 10px 'JetBrains Mono','DM Mono',monospace;
-  white-space:nowrap;
-}
 .detail-view .history-list { gap:14px; }
 .detail-view .history-line { align-items:center; }
 .history-description {
@@ -3402,6 +2796,7 @@ body {
   border-radius:11px;
   background:#11151c;
   color:#cbd5e1;
-  font-size:11px;
+  font-size:13px;
   line-height:1.5;
 }
+/* #endregion */
