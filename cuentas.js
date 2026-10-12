@@ -28,7 +28,6 @@ function renderFormularioCuenta(auth, mensaje = "") {
         ${registrando ? `
           <label>Nombre completo<input name="nombre" autocomplete="name" required maxlength="80"></label>
           <label>Correo electrónico<input name="correo" type="email" autocomplete="email" required maxlength="120"></label>
-          <label>Teléfono de contacto<input name="telefono" type="tel" autocomplete="tel" required maxlength="24"></label>
           <label>Municipalidad cercana<select name="municipalidad" required>
             ${MUNICIPALIDADES.map(item => `<option value="${item.id}">${escapar(item.nombre)}</option>`).join("")}
           </select></label>
@@ -74,7 +73,6 @@ async function procesarFormularioCuenta(event) {
       const cuentaNueva = {
         nombre: String(datos.get("nombre")).trim(),
         correo,
-        telefono: String(datos.get("telefono")).trim(),
         municipalidadId: String(datos.get("municipalidad")),
         ...await crearCredencial(password)
       };

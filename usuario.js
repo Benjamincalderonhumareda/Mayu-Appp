@@ -14,7 +14,7 @@ function renderUsuario(preservarFormulario = false) {
   perfilUsuario = {
     nombre: cuenta.nombre,
     correo: cuenta.correo,
-    municipalidadId: cuenta.municipalidadId || "chaclacayo"
+    municipalidadId: cuenta.municipalidadId || "ñaña"
   };
   auth.innerHTML = "";
   contenido.hidden = false;
@@ -28,8 +28,8 @@ function renderUsuario(preservarFormulario = false) {
     || MUNICIPALIDADES[0];
   document.getElementById("municipality-name").textContent = municipalidad.nombre;
   document.getElementById("municipality-phone").textContent = municipalidad.telefonoVisible;
-  document.getElementById("municipality-source").href = municipalidad.fuente;
-  document.getElementById("emergency-call").href = `tel:${municipalidad.telefono}`;
+  document.getElementById("municipality-source").textContent = municipalidad.Whatsapp;
+  document.getElementById("emergency-call").href = `tel:${municipalidad.Whatsapp}`;
 
   const municipalityOptions = document.getElementById("municipality-options");
   municipalityOptions.innerHTML = `
@@ -79,6 +79,7 @@ function renderUsuario(preservarFormulario = false) {
 function toggleAsignado(id, checked, checkbox) {
   asignados = checked ? [...new Set([...asignados, id])] : asignados.filter(x => x !== id);
   guardar(STORAGE_KEYS.assigned, asignados);
+  sincronizarPuentesPush();
 
   const fila = checkbox?.closest(".assigned-row");
   const puente = listaPuentes.find(item => item.id === id);

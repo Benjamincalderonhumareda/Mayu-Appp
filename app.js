@@ -11,7 +11,7 @@ const puentesIniciales = [
     lon: -76.86724132554801 },
     alturaMetros: 18.5,
     imagen: "./Img/puente carapongo.png",
-    mapaUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801",
+    mapaUrl: "https://maps.app.goo.gl/SgbUPj8WyLoc5aTB7",
     mapaEmbedUrl: "https://www.google.com/maps?q=-12.006677541154438,-76.86724132554801&output=embed",
     historial: [
     { fecha: "2026-09-09 15:30:00", estado: "Abierto", nivelCaudalCm: 143 },
@@ -25,19 +25,19 @@ const puentesIniciales = [
     lon: -76.89223339596234 },
     alturaMetros: 15.5,
     imagen: "./Img/Puente Los Angeles.png",
-    mapaUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234",
+    mapaUrl: "https://maps.app.goo.gl/gkXXKvpX5VqrhT4RA",
     mapaEmbedUrl: "https://www.google.com/maps?q=-12.013213147310912,-76.89223339596234&output=embed",
     historial: [
     { fecha: "2026-09-09 15:25:00", estado: "Alerta", nivelCaudalCm: 1054 },
     { fecha: "2026-09-09 12:00:00", estado: "Abierto", nivelCaudalCm: 920 }
   ] },
-  { id: "chaclacayo",
-    nombre: "Puente Chaclacayo",
+  { id: "ñaña",
+    nombre: "Puente Ñaña",
     km: "24.2",
     coordenadas: { lat: -11.968437599999998, lon: -76.7459362 },
     alturaMetros: 15,
-    imagen: "./Img/Puente Chaclacayo.png",
-    mapaUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362",
+    imagen: "./Img/Puente Ñaña.png",
+    mapaUrl: "https://maps.app.goo.gl/SbvdRWx8uRyhVJop9",
     mapaEmbedUrl: "https://www.google.com/maps?q=-11.968437599999998,-76.7459362&output=embed",
     historial: [
     { fecha: "2026-09-09 18:30:00", estado: "Cerrado", nivelCaudalCm: 1498 },
@@ -57,30 +57,26 @@ const MUNICIPALIDADES = [
   {
     id: "lurigancho-chosica",
     nombre: "Municipalidad de Lurigancho-Chosica",
-    telefono: "017017788",
     telefonoVisible: "(01) 701-7788",
-    fuente: "https://www.gob.pe/munilurigancho"
+    Whatsapp: "978991923"
   },
   {
-    id: "chaclacayo",
-    nombre: "Municipalidad de Chaclacayo",
-    telefono: "013582415",
+    id: "ñaña",
+    nombre: "Municipalidad de Ñaña",
     telefonoVisible: "(01) 358-2415",
-    fuente: "https://www.gob.pe/institucion/munichaclacayo/contacto-y-numeros-de-emergencias"
+    Whatsapp: "99895623"
   },
   {
     id: "ate",
     nombre: "Municipalidad de Ate",
-    telefono: "014177575",
     telefonoVisible: "(01) 417-7575",
-    fuente: "https://www.gob.pe/muniate"
+    Whatsapp: "912347856"
   },
   {
     id: "el-agustino",
     nombre: "Municipalidad de El Agustino",
-    telefono: "013851438",
     telefonoVisible: "(01) 385-1438",
-    fuente: "https://mdea.gob.pe/beta/defensa-civil/"
+    Whatsapp: "984758361"
   }
 ];
 let perfilUsuario = null;
@@ -93,21 +89,21 @@ let consultaMapa = "";
 let asignados = [];
 let ubicacionUsuario = null;
 
+const IMAGENES_PUENTES = {
+  carapongo: "./Img/puente carapongo.png",
+  losangeles: "./Img/Puente Los Angeles.png",
+  ñaña: "./Img/Puente Ñaña.png"
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   puentesConfigurados = leerJSON(STORAGE_KEYS.bridges, puentesIniciales);
   if (!puentesConfigurados.length) puentesConfigurados = puentesIniciales;
   // Mostrar puentes configurados mientras se conecta la API.
   listaPuentes = [...puentesConfigurados];
-  const imagenesPuentes = {
-    carapongo: "./Img/puente carapongo.png",
-    losangeles: "./Img/Puente Los Angeles.png",
-    chaclacayo: "./Img/Puente Chaclacayo.png"
-  };
-  puentesConfigurados.forEach(p => { if (imagenesPuentes[p.id]) p.imagen = imagenesPuentes[p.id]; });
-  const puentePrincipal = puentesConfigurados.find(p => p.id === "chaclacayo") || puentesConfigurados[0];
+  puentesConfigurados.forEach(p => { if (IMAGENES_PUENTES[p.id]) p.imagen = IMAGENES_PUENTES[p.id]; });
+  const puentePrincipal = puentesConfigurados.find(p => p.id === "ñaña") || puentesConfigurados[0];
   asignados = leerJSON(STORAGE_KEYS.assigned, puentePrincipal ? [puentePrincipal.id] : []);
   document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => cambiarPagina(btn.dataset.page)));
-  document.getElementById("profile-shortcut").addEventListener("click", () => cambiarPagina("usuario"));
   const botonUbicacion = document.getElementById("location-button");
   if (botonUbicacion) botonUbicacion.addEventListener("click", solicitarUbicacion);
   document.getElementById("search-widgets").addEventListener("input", e => { consultaWidget = e.target.value.trim().toLocaleLowerCase("es"); renderWidgets(); });
@@ -169,21 +165,23 @@ async function sincronizarAlertas() {
       const nombre = String(lectura.nombre_puente || "").trim();
       const clave = normalizarNombrePuente(nombre);
       if (!nombre || !clave) continue;
-      let puente = listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave)
+
+      const base = puentesIniciales.find(p => normalizarNombrePuente(p.nombre) === clave)
         || puentesConfigurados.find(p => normalizarNombrePuente(p.nombre) === clave)
-        || puentesIniciales.find(p => normalizarNombrePuente(p.nombre) === clave);
-      if (!puente) {
-        puente = {
-          id: clave,
-          nombre,
-          km: "",
-          coordenadas: { lat: null, lon: null },
-          alturaMetros: null,
-          imagen: "",
-          mapaUrl: "",
-          historial: []
-        };
-      }
+        || listaPuentes.find(p => normalizarNombrePuente(p.nombre) === clave)
+        || {};
+
+      const puente = {
+        id: base.id || clave,
+        nombre: base.nombre || nombre,
+        km: base.km || "",
+        coordenadas: base.coordenadas || { lat: null, lon: null },
+        alturaMetros: base.alturaMetros || null,
+        imagen: base.imagen || IMAGENES_PUENTES[base.id || clave] || "",
+        mapaUrl: base.mapaUrl || "",
+        mapaEmbedUrl: base.mapaEmbedUrl || "",
+        historial: []
+      };
 
       const alturaPuente = numeroAPI(lectura.altura_puente ?? lectura.altura_del_puente);
       if (Number.isFinite(alturaPuente) && alturaPuente > 0) puente.alturaMetros = alturaPuente;
@@ -193,10 +191,21 @@ async function sincronizarAlertas() {
       puentesRecibidos.push(puente);
     }
 
-    // Neon es la fuente de verdad de qué puentes aparecen en la app.
-    const puentesCombinados = new Map(puentesConfigurados.map(puente => [puente.id, puente]));
-    puentesRecibidos.forEach(puente => puentesCombinados.set(puente.id, puente));
-    listaPuentes = [...puentesCombinados.values()];
+    // Neon es la única fuente de verdad: solo se muestran los puentes que existen en Neon.
+    // Si un puente fue borrado en Neon, se elimina inmediatamente de la app.
+    listaPuentes = puentesRecibidos;
+    puentesConfigurados = puentesRecibidos;
+    guardar(STORAGE_KEYS.bridges, puentesRecibidos);
+
+    // Limpiar puentes seguidos que ya no existen en Neon
+    const asignadosValidos = asignados.filter(id => listaPuentes.some(p => p.id === id));
+    if (asignadosValidos.length !== asignados.length) {
+      asignados = asignadosValidos;
+      guardar(STORAGE_KEYS.assigned, asignados);
+      if (typeof sincronizarPuentesPush === "function") {
+        sincronizarPuentesPush();
+      }
+    }
 
     if (estadoApi) {
       estadoApi.textContent = "API conectada";
@@ -206,8 +215,12 @@ async function sincronizarAlertas() {
     renderUsuario(true);
     renderizar();
     const paginaDetalle = document.getElementById("page-detalle");
-    if (paginaDetalle.classList.contains("active") && paginaDetalle.dataset.bridgeId) {
-      abrirDetalle(paginaDetalle.dataset.bridgeId, false);
+    if (paginaDetalle && paginaDetalle.classList.contains("active") && paginaDetalle.dataset.bridgeId) {
+      if (listaPuentes.some(p => p.id === paginaDetalle.dataset.bridgeId)) {
+        abrirDetalle(paginaDetalle.dataset.bridgeId, false);
+      } else {
+        volverAWidgets();
+      }
     }
     const puenteNotificado = new URLSearchParams(window.location.search).get("puente");
     if (puenteNotificado) {
@@ -345,22 +358,30 @@ function contenidoDetalle(p) {
       <div class="detail-heading">
       <span class="history-icon">◷</span>
       <div>
-      <b>Historial de estados</b>
-      <small>${history.length} cambios de estado</small>
+      <b>Historial de Estados</b>
       </div>
-      </div>${history.length ? `<div class="history-list">${history.map(x => `<div class="history-item ${estadoClase(x.estado)}">
-      <i>
-      </i>
-      <div>
-      <div class="history-line">
-      <b>${escapar(x.fecha || "")}</b>
-      <span class="status-tag">
-      <i>
-      </i>${x.estadoAnterior && x.estadoNuevo ? `${escapar(estadoLabel(x.estadoAnterior))} → ${escapar(estadoLabel(x.estadoNuevo))}` : escapar(estadoLabel(x.estado))}</span>
-      <strong>${Number.isFinite(Number(x.nivelCaudalCm)) ? `${(Number(x.nivelCaudalCm) / 100).toFixed(2)} m` : "—"}</strong>
-      </div>
-      </div>
-      </div>`).join("")}</div>` : `<p class="muted">Aún no hay historial.</p>`}</div>`;
+      <strong class="history-count">${history.length} registros</strong>
+      </div>${history.length ? `<div class="history-list">${history.map(x => {
+        const estado = estadoLabel(x.estadoNuevo || x.estado);
+        const descripcion = x.estadoAnterior && x.estadoNuevo
+          ? `El estado cambió de ${estadoLabel(x.estadoAnterior)} a ${estado}.`
+          : `El registro reporta el puente en estado ${estado.toLocaleLowerCase("es")}.`;
+        const hora = (x.fecha || "").slice(11, 16) || x.fecha || "Hora no disponible";
+        const nivel = x.nivelCaudalCm != null && Number.isFinite(Number(x.nivelCaudalCm))
+          ? `${(Number(x.nivelCaudalCm) / 100).toFixed(2)} m`
+          : "—";
+        return `<div class="history-item ${estadoClase(estado)}">
+          <i></i>
+          <div>
+            <div class="history-line">
+              <b>${escapar(hora)} hrs</b>
+              <span class="status-tag"><i></i>${escapar(estado)}</span>
+              <strong>Nivel: ${nivel}</strong>
+            </div>
+            <p class="history-description">${escapar(descripcion)}</p>
+          </div>
+        </div>`;
+      }).join("")}</div>` : `<p class="muted">Aún no hay historial.</p>`}</div>`;
 }
 function abrirDetalle(id, navegar = true) {
   const puente = listaPuentes.find(p => p.id === id);

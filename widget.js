@@ -29,7 +29,7 @@ function tarjetaWidget(p) {
   const distancia = distanciaPuenteKm(p);
   const etiquetaDistancia = distancia === null
     ? `${ubicacionUsuario ? "FALTA UBICACIÓN GPS · " : ""}${p.km ? `🔺 ESTAS A UNA DISTANCIA DE: ${escapar(p.km)} KM ` : "UBICACIÓN NO REGISTRADA"}`
-    : `DISTANCIA DESDE TI: ${distancia.toFixed(1)} km`;
+    : `🔺 ESTAS A UNA DISTANCIA DE: ${distancia.toFixed(1)} km`;
   return `<article class="bridge-card ${c}" role="button" tabindex="0" aria-label="Ver detalles de ${escapar(p.nombre)}" onclick="abrirDetalle('${escapar(p.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirDetalle('${escapar(p.id)}')}">
     <div class="bridge-status-head">
       <span class="bridge-location">${etiquetaDistancia}</span>

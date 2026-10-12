@@ -20,7 +20,7 @@
       <div class="app-shell">
       <header class="topbar">
         <a class="brand" href="#widgets" aria-label="MayuAlert, inicio">
-          <span class="brand-mark">M</span>
+          <img class="brand-mark" src="./Img/app-icon-192.png" alt="">
           <span>
             <b>MayuAlert</b>
             <small>MONITOREO · RÍMAC</small>
@@ -36,12 +36,8 @@
       <main>
         <section class="page active" id="page-widgets" aria-labelledby="heading-widgets">
           <div class="widget-topbar">
-            <h1 id="heading-widgets">Estado General de Puentes</h1>
-            <div class="widget-actions">
-              <button class="profile-shortcut" id="profile-shortcut" type="button" aria-label="Abrir perfil de usuario">
-                <span class="material-symbols-outlined">person</span>
-              </button>
-            </div>
+            <h1 id="heading-widgets">Puentes Monitoreados</h1>
+            <img class="widget-brand-logo" src="./Img/app-icon-192.png" alt="">
           </div>
           <div class="widget-search-row">
             <label class="search">
@@ -63,8 +59,7 @@
         <section class="page" id="page-mapa" aria-labelledby="heading-mapa">
           <div class="page-heading">
             <div>
-              <p class="eyebrow">UBICACIONES</p>
-              <h1 id="heading-mapa">Mapa de puentes</h1>
+              <h1 id="heading-mapa">UBICACIONES DE PUENTES</h1>
             </div>
             <span class="heading-icon">⌖</span>
           </div>
@@ -84,7 +79,6 @@
             </i>
             <span id="map-count">
             </span>
-            <span class="separator">·</span> Ubicaciones configuradas manualmente</div>
         </section>
 
         <section class="page detail-page" id="page-detalle" aria-labelledby="detail-title">
@@ -165,7 +159,7 @@
                 <span>SERENAZGO / EMERGENCIAS<b id="municipality-phone">
                   </b>
                 </span>
-                <span>FUENTE OFICIAL<a id="municipality-source" target="_blank" rel="noopener">Ver contacto</a></span>
+                <span>WHATSAPP<a id="municipality-source" target="_blank" rel="noopener">Ver contacto</a></span>
               </div>
             </div>
             <a class="emergency-call" id="emergency-call">
@@ -179,15 +173,15 @@
 
       <nav class="bottom-nav" aria-label="Navegación principal">
         <button class="nav-item active" data-page="widgets">
-          <span>▦</span>
-          <small>Widgets</small>
+          <img class="nav-icon nav-bridge-icon" src="./Img/puente.png" alt="">
+          <small>Puentes</small>
         </button>
         <button class="nav-item" data-page="mapa">
-          <span>🗺️</span>
+          <img class="nav-icon" src="./Img/mapa.png" alt="">
           <small>Mapa</small>
         </button>
         <button class="nav-item" data-page="usuario">
-          <span>👤</span>
+          <img class="nav-icon" src="./Img/usuario.png" alt="">
           <small>Usuario</small>
         </button>
       </nav>
