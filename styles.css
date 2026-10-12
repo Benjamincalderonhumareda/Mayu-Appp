@@ -2292,7 +2292,7 @@ body {
     font-size:12px
   }
 .bridge-location {
-    font-size:14px
+    font-size:11px
   }
 .bridge-status-head .status-tag {
     font-size:12px
@@ -2394,7 +2394,7 @@ body {
   border-color:#303846
 }
 .detail-current span {
-  font-size:12px;
+  font-size:10px;
   color:#a8b3c1
 }
 .detail-current b {
