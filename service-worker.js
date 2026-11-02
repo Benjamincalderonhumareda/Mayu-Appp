@@ -1,4 +1,4 @@
-const CACHE_NAME = "mayualert-shell-v24";
+const CACHE_NAME = "mayualert-shell-v25";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -14,7 +14,8 @@ const APP_FILES = [
   "./Img/app-icon-512.png",
   "./Img/puente carapongo.png",
   "./Img/Puente Chaclacayo.png",
-  "./Img/Puente Los Angeles.png"
+  "./Img/Puente Los Angeles.png",
+  "./Img/puente fia.jpeg"
 ];
 
 self.addEventListener("install", event => {
@@ -58,7 +59,14 @@ self.addEventListener("push", event => {
     renotify: Boolean(datos.renotify),
     data: { bridgeId: datos.bridgeId || datos.bridge_id || datos.puenteId || null }
   };
-  event.waitUntil(self.registration.showNotification(datos.title || "MayuAlert", opciones));
+  event.waitUntil((async () => {
+    await self.registration.showNotification(datos.title || "MayuAlert", opciones);
+    const ventanas = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    ventanas.forEach(ventana => ventana.postMessage({
+      type: "MAYUALERT_PUSH_RECEIVED",
+      bridgeId: opciones.data.bridgeId
+    }));
+  })());
 });
 
 self.addEventListener("notificationclick", event => {

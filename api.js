@@ -43,7 +43,7 @@ async function obtenerPuentesAPI({ puentesIniciales, puentesConfigurados, listaP
       km: base.km || "",
       coordenadas: base.coordenadas || { lat: null, lon: null },
       alturaMetros: base.alturaMetros || null,
-      imagen: base.imagen || imagenesPuentes[base.id || clave] || "",
+      imagen: imagenesPuentes[clave] || base.imagen || imagenesPuentes[base.id] || "",
       mapaUrl: base.mapaUrl || "",
       historial: []
     };

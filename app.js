@@ -76,6 +76,7 @@ let ubicacionUsuario = null;
 const IMAGENES_PUENTES = {
   carapongo: "./Img/puente carapongo.png",
   losangeles: "./Img/Puente Los Angeles.png",
+  puentefia: "./Img/puente fia.jpeg",
   ñaña: "./Img/Puente Ñaña.png"
 };
 
@@ -107,6 +108,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   inicializarNotificacionesPush();
   inicializarCuentaUsuario();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", event => {
+      if (event.data?.type === "MAYUALERT_PUSH_RECEIVED") {
+        sincronizarAlertas();
+      }
+    });
+  }
   renderUsuario();
   renderizar();
   sincronizarAlertas();
