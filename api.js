@@ -75,7 +75,7 @@ function convertirLecturaAPI(registro) {
       ? "Alerta"
       : "Abierto";
   const fecha = registro.fecha || registro.fecha_registro || registro.created_at || registro.timestamp || new Date().toISOString();
-  return { fecha: String(fecha).replace("T", " ").slice(0, 19), estado, nivelCaudalCm: Number.isFinite(nivelMetros) ? nivelMetros * 100 : null };
+  return { fecha: String(fecha), estado, nivelCaudalCm: Number.isFinite(nivelMetros) ? nivelMetros * 100 : null };
 }
 
 function convertirTransicionAPI(evento) {
@@ -83,7 +83,7 @@ function convertirTransicionAPI(evento) {
   const nivelMetros = numeroAPI(datos.altura_agua ?? datos.nivel_caudal ?? datos.caudal_historico);
   const fecha = evento.fecha_cambio || evento.fecha || "";
   return {
-    fecha: String(fecha).replace("T", " ").slice(0, 19),
+    fecha: String(fecha),
     estado: evento.estado_nuevo || evento.estado_anterior || "Sin datos",
     estadoAnterior: evento.estado_anterior || "",
     estadoNuevo: evento.estado_nuevo || "",

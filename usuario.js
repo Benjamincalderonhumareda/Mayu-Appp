@@ -22,15 +22,26 @@ function renderUsuario(preservarFormulario = false) {
 
   document.getElementById("user-name").textContent = perfilUsuario.nombre;
 
-  const municipioGuardado = localStorage.getItem(STORAGE_KEYS.municipality)
+  let municipioGuardado = localStorage.getItem(STORAGE_KEYS.municipality)
     || perfilUsuario.municipalidadId;
+  if (municipioGuardado === "el-agustino") {
+    municipioGuardado = "la-molina";
+    localStorage.setItem(STORAGE_KEYS.municipality, municipioGuardado);
+    const cuentas = leerJSON(USER_STORAGE_KEYS.accounts, []);
+    const indiceCuenta = cuentas.findIndex(item => item.correo === perfilUsuario.correo);
+    if (indiceCuenta >= 0) {
+      cuentas[indiceCuenta].municipalidadId = municipioGuardado;
+      guardar(USER_STORAGE_KEYS.accounts, cuentas);
+    }
+  }
   const municipalidad = MUNICIPALIDADES.find(item => item.id === municipioGuardado)
     || MUNICIPALIDADES[0];
   document.getElementById("municipality-name").textContent = municipalidad.nombre;
   document.getElementById("municipality-phone").textContent = municipalidad.telefonoVisible;
   const whatsapp = document.getElementById("municipality-source");
   whatsapp.textContent = municipalidad.Whatsapp;
-  whatsapp.href = `https://wa.me/51${municipalidad.Whatsapp}`;
+  whatsapp.href = municipalidad.Whatsapp ? `https://wa.me/51${municipalidad.Whatsapp}` : "#";
+  whatsapp.parentElement.hidden = !municipalidad.Whatsapp;
   document.getElementById("emergency-call").href = `tel:${municipalidad.telefonoVisible.replace(/\D/g, "")}`;
 
   const municipalityOptions = document.getElementById("municipality-options");

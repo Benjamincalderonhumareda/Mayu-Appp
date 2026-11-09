@@ -2594,7 +2594,15 @@ body {
 /* Historial de estados dentro del detalle */
 .history-card .detail-heading { align-items:center; }
 .history-card .detail-heading b { font-size:15px; }
-.detail-view .history-list { gap:14px; }
+.detail-view .history-list {
+  max-height:min(55vh, 420px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  gap:14px;
+  padding-right:8px;
+  scrollbar-width:thin;
+  scrollbar-color:#667085 #11151c;
+}
 .detail-view .history-line { align-items:center; }
 .history-description {
   margin:7px 0 0;

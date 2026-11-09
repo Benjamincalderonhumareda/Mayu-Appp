@@ -48,7 +48,7 @@ const STORAGE_KEYS = {
 const MUNICIPALIDADES = [
   {
     id: "lurigancho-chosica",
-    nombre: "Municipalidad de Lurigancho-Chosica",
+    nombre: "Municipalidad de Chosica",
     telefonoVisible: "(01) 701-7788",
     Whatsapp: "978991923"
   },
@@ -65,10 +65,10 @@ const MUNICIPALIDADES = [
     Whatsapp: "912347856"
   },
   {
-    id: "el-agustino",
-    nombre: "Municipalidad de El Agustino",
-    telefonoVisible: "(01) 385-1438",
-    Whatsapp: "984758361"
+    id: "la-molina",
+    nombre: "Municipalidad de La Molina",
+    telefonoVisible: "(01) 754-5000",
+    Whatsapp: ""
   }
 ];
 let perfilUsuario = null;
@@ -197,6 +197,21 @@ function estadoClase(estado) {
   return "open";
 }
 function estadoLabel(estado) { const c = estadoClase(estado); return c === "closed" ? "Cerrado" : c === "warning" ? "Alerta" : estado === "Sin datos" ? estado : "Abierto"; }
+function fechaHoraPeru(fecha) {
+  if (!fecha) return { hora: "Hora no disponible", fecha: "" };
+  const valor = String(fecha).replace(" ", "T");
+  // Los registros heredados sin offset fueron guardados en UTC.
+  const fechaConZona = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(valor) ? valor : `${valor}Z`;
+  const instante = new Date(fechaConZona);
+  if (Number.isNaN(instante.getTime())) {
+    return { hora: valor.slice(11, 16) || "Hora no disponible", fecha: valor.slice(0, 10) };
+  }
+  const opciones = { timeZone: "America/Lima" };
+  return {
+    hora: new Intl.DateTimeFormat("es-PE", { ...opciones, hour: "2-digit", minute: "2-digit", hour12: false }).format(instante),
+    fecha: new Intl.DateTimeFormat("es-PE", { ...opciones, day: "2-digit", month: "2-digit", year: "numeric" }).format(instante)
+  };
+}
 function porcentaje(p) { return Number(p.alturaMetros) > 0 ? Math.min(Math.round(actual(p).nivelCaudalCm / (p.alturaMetros * 100) * 100), 100) : null; }
 function escapar(valor) { return String(valor ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
 function renderizar() { renderWidgets(); renderMapa(); }
@@ -256,7 +271,8 @@ function distanciaPuenteKm(p) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 function contenidoDetalle(p) {
-  const history = (p.historial || []).slice(0, 8), max = Math.max(Number(p.alturaMetros) * 100, ...history.map(x => Number(x.nivelCaudalCm) || 0), 1);
+  const historialCompleto = p.historial || [];
+  const history = historialCompleto.slice(0, 8), max = Math.max(Number(p.alturaMetros) * 100, ...history.map(x => Number(x.nivelCaudalCm) || 0), 1);
   const points = history.slice().reverse().map((x, i, arr) => `${arr.length < 2 ? 8 : 8 + i * (84 / (arr.length - 1))},${44 - (Number(x.nivelCaudalCm) || 0) / max * 35}`).join(" ");
   return `<div class="chart-card">
     <div class="detail-heading">
@@ -282,12 +298,13 @@ function contenidoDetalle(p) {
       <div>
       <b>Historial de Estados</b>
       </div>
-      </div>${history.length ? `<div class="history-list">${history.map(x => {
+      </div>${historialCompleto.length ? `<div class="history-list">${historialCompleto.map(x => {
         const estado = estadoLabel(x.estadoNuevo || x.estado);
         const descripcion = x.estadoAnterior && x.estadoNuevo
           ? `El estado cambió de ${estadoLabel(x.estadoAnterior)} a ${estado}.`
           : `El registro reporta el puente en estado ${estado.toLocaleLowerCase("es")}.`;
-        const hora = (x.fecha || "").slice(11, 16) || x.fecha || "Hora no disponible";
+        const fechaHora = fechaHoraPeru(x.fecha);
+        const fechaEtiqueta = fechaHora.fecha ? ` · ${escapar(fechaHora.fecha)}` : "";
         const nivel = x.nivelCaudalCm != null && Number.isFinite(Number(x.nivelCaudalCm))
           ? `${(Number(x.nivelCaudalCm) / 100).toFixed(2)} m`
           : "—";
@@ -295,7 +312,7 @@ function contenidoDetalle(p) {
           <i></i>
           <div>
             <div class="history-line">
-              <b>${escapar(hora)} hrs</b>
+              <b>${escapar(fechaHora.hora)} hrs${fechaEtiqueta}</b>
               <span class="status-tag"><i></i>${escapar(estado)}</span>
               <strong>Nivel: ${nivel}</strong>
             </div>
