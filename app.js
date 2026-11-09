@@ -22,6 +22,14 @@ const puentesIniciales = [
     imagen: "./Img/Puente Los Angeles.png",
     mapaUrl: "https://maps.app.goo.gl/gkXXKvpX5VqrhT4RA"
   },
+  { id: "puentefia",
+    nombre: "Puente Fía",
+    km: "",
+    coordenadas: { lat: null, lon: null },
+    alturaMetros: null,
+    imagen: "./Img/puente fia.jpg",
+    mapaUrl: "https://maps.app.goo.gl/WPJmuxyc1nYMCAkN9"
+  },
   { id: "ñaña",
     nombre: "Puente Ñaña",
     km: "24.2",
@@ -76,7 +84,7 @@ let ubicacionUsuario = null;
 const IMAGENES_PUENTES = {
   carapongo: "./Img/puente carapongo.png",
   losangeles: "./Img/Puente Los Angeles.png",
-  puentefia: "./Img/puente fia.jpeg",
+  puentefia: "./Img/puente fia.jpg",
   ñaña: "./Img/Puente Ñaña.png"
 };
 

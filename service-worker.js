@@ -15,7 +15,7 @@ const APP_FILES = [
   "./Img/puente carapongo.png",
   "./Img/Puente Chaclacayo.png",
   "./Img/Puente Los Angeles.png",
-  "./Img/puente fia.jpeg"
+  "./Img/puente fia.jpg"
 ];
 
 self.addEventListener("install", event => {

@@ -28,8 +28,10 @@ function renderUsuario(preservarFormulario = false) {
     || MUNICIPALIDADES[0];
   document.getElementById("municipality-name").textContent = municipalidad.nombre;
   document.getElementById("municipality-phone").textContent = municipalidad.telefonoVisible;
-  document.getElementById("municipality-source").textContent = municipalidad.Whatsapp;
-  document.getElementById("emergency-call").href = `tel:${municipalidad.Whatsapp}`;
+  const whatsapp = document.getElementById("municipality-source");
+  whatsapp.textContent = municipalidad.Whatsapp;
+  whatsapp.href = `https://wa.me/51${municipalidad.Whatsapp}`;
+  document.getElementById("emergency-call").href = `tel:${municipalidad.telefonoVisible.replace(/\D/g, "")}`;
 
   const municipalityOptions = document.getElementById("municipality-options");
   municipalityOptions.innerHTML = `
@@ -61,10 +63,7 @@ function renderUsuario(preservarFormulario = false) {
 
   const elegidos = listaPuentes.filter(p => asignados.includes(p.id));
   document.getElementById("assigned-count").textContent = `${elegidos.length} seleccionado${elegidos.length === 1 ? "" : "s"}`;
-  const etiquetaSeguimiento = p => {
-    const clase = estadoClase(actual(p).estado);
-    return clase === "open" ? "EN VIVO · ÓPTIMO" : clase === "warning" ? "EN VIVO · ALERTA" : "EN VIVO · CERRADO";
-  };
+  const etiquetaSeguimiento = p => estadoLabel(actual(p).estado);
   document.getElementById("assigned-bridges").innerHTML = elegidos.map(p => `<label class="assigned-row selected ${estadoClase(actual(p).estado)}">
     <span class="assigned-name"><b>${escapar(p.nombre)}</b><small>${etiquetaSeguimiento(p)}</small></span>
     <span class="material-symbols-outlined assigned-indicator" aria-hidden="true">task_alt</span>
@@ -93,9 +92,7 @@ function toggleAsignado(id, checked, checkbox) {
     fila.querySelector(".assigned-indicator").textContent = checked ? "task_alt" : "radio_button_unchecked";
 
     const detalle = fila.querySelector(".assigned-name small");
-    detalle.textContent = checked
-      ? (estadoClase(estado) === "open" ? "EN VIVO · ÓPTIMO" : estadoClase(estado) === "warning" ? "EN VIVO · ALERTA" : "EN VIVO · CERRADO")
-      : estadoLabel(estado);
+    detalle.textContent = estadoLabel(estado);
     fila.querySelector("input").setAttribute("aria-label", `${checked ? "Dejar de seguir" : "Seguir"} ${puente.nombre}`);
   }
 
